@@ -292,13 +292,13 @@ export const CartDrawer = () => {
         // Product Logic applied in calculation.
 
         setAppliedVoucher({
-            code: data.voucher_code,
-            type: data.type,
-            value: data.value,
+            code: data.voucher_code || voucherCode,
+            type: data.type as 'PERCENT' | 'FIXED' | 'FIXED_PRICE',
+            value: data.value || 0,
             min_spend: data.min_spend || 0,
             is_free_shipping: data.is_free_shipping || false,
-            product_ids: data.product_ids,
-            max_usage_per_cart: data.max_usage_per_cart
+            product_ids: data.product_ids || undefined,
+            max_usage_per_cart: data.max_usage_per_cart || undefined
         });
     };
 
