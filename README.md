@@ -1,83 +1,94 @@
 # ZEUZ_SUPPLY // 21700 ENERGY INFRASTRUCTURE
 
-**Version**: 2.0.0 (Execution Phase)
-**Stack**: Next.js 14 (App Router), Supabase (Auth/DB/Realtime), Stripe (Payments), Vercel (Deployment)
+**Version**: 2.1.0 (Advanced Performance Refactor)
+**Stack**: Next.js 14, Supabase (RT), Stripe Terminal/API, Framer Motion, Three.js (R3F)
 
 ---
 
-## 1. ARCHITECTURE & FLOW
+## 1. THE ZEUZ PHILOSOPHY: INDUSTRIAL HIGH-FIDELITY
 
-The application operates as a Headless E-commerce platform with a strict "Server-Authoritative" security model.
+ZEUZ_SUPPLY is not a storefront. It is a **technical protocol** for the distribution of high-discharge Lithium-Ion modules. 
 
-### **Core Data Flow**
-1.  **Product/Inventory**: Managed in `Supabase:products`.
-2.  **Storefront (Client)**: Fetches cached data via `/api/live-inventory`.
-    *   *Why?* To decouple the frontend from direct DB connects for public traffic (Performance).
-3.  **Realtime State**: Client polls `/api/live-inventory` every 30s.
-    *   Updates: Price, Stock, **Volume Discounts**, Voucher Validity.
-4.  **Cart & Persistence**:
-    *   **Local**: `localStorage` (zustand-persist) for guest users.
-    *   **Server**: `Supabase:cart_items` for logged-in users.
-    *   *Sync*: Cart merges automatically on login. Logic handles "Slugs" (Frontend) <-> "UUIDs" (Backend).
-5.  **Checkout (The "Paranoid Check")**:
-    *   Initiated securely via `/api/checkout`.
-    *   **PROTOCOL**: The server RE-FETCHES all prices, stocks, and active discounts using the `Service Role Key` at the moment of creation. Client data is treated as untrusted.
+### **Design Language: Teenage.Engineering x Brutalism**
+The platform's aesthetic is heavily influenced by the "Functional-Industrial" school of design, specifically the precision of **teenage.engineering**. 
 
-### **Authentication**
-*   **Method**: Supabase Magic Link / OTP.
-*   **Role Based Access**:
-    *   `public`: Browse & Buy.
-    *   `admin`: Access `/admin` dashboard.
-    *   *Note*: The legacy `zeuz_dev_admin` cookie backdoor provided in v1 has been **REMOVED** for security.
+*   **Tactile Feedback**: Every interaction—from the scroll-reactive 3D cell in the `HeroViewport` to the layout shifts—is designed to feel like operating a piece of high-end lab equipment.
+*   **Typography as Specs**: We use **JetBrains Mono** for all data-sensitive text. The UI doesn't just display information; it presents it as a technical manifest.
+*   **Visual Pillars**:
+    *   **High Contrast**: Deep #0A0A0A backgrounds with high-luminance accents.
+    *   **Modular Grids**: Everything is contained within strict borders and modular blocks, reflecting the physical structure of a battery rack.
+    *   **Dynamic Branding**: The site theme shifts based on the "Energy Phase" (POWER/Orange, ENERGY/Green, PROTOTYPE/Grey).
 
 ---
 
-## 2. DIRECTORY STRUCTURE
+## 2. TECHNICAL ARCHITECTURE: THE PARANOID MODEL
 
-| Path | Purpose |
-| :--- | :--- |
-| `app/api` | Server-side endpoints. Isolates critical logic (Checkout/Inventory) from client bundles. |
-| `app/admin` | Protected Dashboard. Requires RLS `admin` role. |
-| `components` | Reusable UI atoms. Strict "Industrial/Brutalist" styling rules apply. |
-| `lib/store.ts` | Global State (Zustand). Handles Cart, User, & Theme. |
-| `supabase/migrations` | SQL Source of Truth. **Always apply sequentially.** |
-| `_legacy` | Deprecated/Zombie code. Do not use. Reference only. |
+ZEUZ operates on a **Zero-Trust Inventory Model**. In a world of simultaneous bulk orders, "eventual consistency" is a failure.
 
----
+### **The Paranoid Checkout Protocol**
+While the frontend provides a smooth, real-time experience, the true authority lives in the **Server API (`/api/checkout`)**. 
+-   **Atomic Re-Verification**: At the moment of checkout, the system bypasses all cached states and re-queries the database using the `Service Role Key`.
+-   **Static Inventory Verification**: It checks real-time batches, global voucher usage caps, and volume discount tiers in a single transaction before passing the payload to Stripe.
+-   **Price Protection**: If a price change is made in the Admin panel while a user is in the checkout flow, the server will catch the discrepancy and prevent the transaction, forcing a refresh.
 
-## 3. DESIGN SYSTEM (TEENAGE.ENGINEERING)
-
-The codebase implements a specific aesthetic philosophy: **"Raw, Industrial, High-Fidelity."**
-
-*   **Intentional Hacks**: Some layouts use "brute force" spacing or raw CSS grids to achieve a specific "broken/aligned" technical look. *Do not "fix" alignment unless it breaks usability.*
-*   **Typography**: `JetBrains Mono` (Data/Spec) + `Inter Tight` (UI).
-*   **Visual Logic**:
-    *   **Power**: Red/Orange Accents.
-    *   **Energy**: Green/Teal Accents.
-    *   **Prototype**: Monochrome/Wireframe.
+### **Hybrid Persistence Matrix**
+-   **Zustand (Transience)**: Handles rapid UI state, theme shifts, and instant cart updates.
+-   **Supabase (Authority)**: Persistent storage for `cart_items` and `cart_sessions`.
+-   **Real-time Polling**: The client implements a background heartbeat (`/api/live-inventory`) that refreshes stock and pricing every 30 seconds, ensuring the UI "feels" as live as the database.
 
 ---
 
-## 4. DEPLOYMENT & OPS
+## 3. ADMIN INFRASTRUCTURE // THE CONTROL DECK
 
-### **Prerequisites**
-1.  **Supabase Project**: Apply migrations in `supabase/migrations`.
-2.  **Stripe Account**: Set `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET`.
-3.  **Vercel**: Link repository.
+The `/admin` dashboard provides direct manipulation of the ZEUZ ecosystem.
 
-### **Environment Variables**
-```env
-NEXT_PUBLIC_SUPABASE_URL=...
-NEXT_PUBLIC_SUPABASE_KEY=...             # Anon Key
-SUPABASE_SERVICE_ROLE_KEY=...            # Critical for Checkout
-STRIPE_SECRET_KEY=...
-NEXT_PUBLIC_URL=https://zeuz.supply
-```
+### **Current Operational Modules**
+-   **Dynamic Pricing Matrix**: A real-time editor for **Volume Discounts**. Adjust bulk quantity triggers (e.g., 2+, 10+, 100+) and their associated percentages instantly across the site.
+-   **Infra-Marketing Control**: Toggle the "Global Splash" system, manage "Launch Counters," and adjust site-wide banners.
+-   **Voucher Authority**: Create complex discount logic (Fixed, Percent, Fixed-Price, Free Shipping) with global usage limits and product-specific whitelists.
+-   **Security**: The legacy dev-cookie backdoor has been deprecated in favor of a strict **RBAC (Role Based Access Control)** model tied to Supabase Auth.
 
-### **Onboarding**
+---
+
+## 4. THE ROADMAP: SCALING INFRASTRUCTURE
+
+To bring ZEUZ to the next level of "Industrial Excellence," the following updates are planned:
+
+### **Short-Term (Logic/Efficiency)**
+-   [ ] **Predictive Stock Alerts**: Implementing a trigger system that notifies the Admin team when `stock_quantity - pending_orders` hits a 15% threshold.
+-   [ ] **Per-Customer Pricing**: Custom "Contract Pricing" tiers for verified Business/Contractor accounts.
+-   [ ] **Advanced Spec Graphs**: Integrate actual discharge curve data from `.csv` logs directly into the product spec views.
+
+### **Medium-Term (Experience)**
+-   [ ] **Physical Terminal Integration**: A local-deployment version of the ZEUZ interface for use in physical distribution centers.
+-   [ ] **Batch Traceability**: Allow customers to see the specific production date and internal testing logs for the batch their cells belong to.
+
+### **Long-Term (Logistics)**
+-   [ ] **Real-time DPD Integration**: Live shipping tracking embedded directly in the `IDENTITY` tab of the Cart Manifest.
+-   [ ] **The "Z-Hub"**: A customer portal for managing large-scale infrastructure projects and historical power usage data.
+
+---
+
+## 5. DEVELOPER COMMANDS
+
+### **Development Initialize**
 ```bash
-git clone <repo>
+# Clone and Install
+git clone https://github.com/zeuz/zeuz-supply.git
 npm install
+
+# Database Synchronization
+npx supabase db push # Syncs Volume Discounts and Cart Tables
+
+# Start Local Server
 npm run dev
-# Access http://localhost:3000
 ```
+
+### **Paranoid Audit**
+To run a full production sanity check:
+```bash
+npm run build # Validates Typings and 3D Asset Traces
+```
+
+---
+*ZEUZ_SUPPLY - THE INFRASTRUCTURE OF POWER.*
