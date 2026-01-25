@@ -34,7 +34,13 @@ While the frontend provides a smooth, real-time experience, the true authority l
 ### **Hybrid Persistence Matrix**
 -   **Zustand (Transience)**: Handles rapid UI state, theme shifts, and instant cart updates.
 -   **Supabase (Authority)**: Persistent storage for `cart_items` and `cart_sessions`.
--   **Real-time Polling**: The client implements a background heartbeat (`/api/live-inventory`) that refreshes stock and pricing every 30 seconds, ensuring the UI "feels" as live as the database.
+-   **Hybrid Hydration (SEO)**: A `StoreHydrator` component injects server-side price/stock data directly into the client store on initial load, preventing "Flash of Unstyled Content" and ensuring correct Search Engine Indexing.
+
+### **The "Red Team" Concurrency Defense**
+To prevent overselling during high-traffic drops, we implement **Option B: Post-Payment Defense**.
+-   **Conflict Detection**: The Stripe Webhook (`checkout.session.completed`) attempts an atomic stock decrement.
+-   **Automatic Refund**: If stock is insufficient (Race Condition), the system *immediately* triggers a Stripe Refund and sends an apology email.
+-   **Result**: Zero risk of unfulfillable orders, even with millisecond-level concurrency.
 
 ---
 
