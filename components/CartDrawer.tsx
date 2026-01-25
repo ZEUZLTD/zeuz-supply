@@ -351,7 +351,8 @@ export const CartDrawer = () => {
             const checkoutPayload = {
                 items,
                 email: session ? session.user.email : shipping.email,
-                shipping: shipping
+                shipping: shipping,
+                voucherCode: appliedVoucher?.code
             };
 
             const [logRes, response] = await Promise.all([
@@ -365,12 +366,12 @@ export const CartDrawer = () => {
                 })
             ]);
 
-            const { url } = await response.json();
-            if (url) window.location.href = url;
-            else alert("Checkout Configuration Error");
+            const data = await response.json();
+            if (data.url) window.location.href = data.url;
+            else alert(data.error || "Checkout Configuration Error");
         } catch (error) {
             console.error("Checkout Failed", error);
-            alert("Checkout Failed");
+            alert("Checkout Failed: " + (error as Error).message);
         } finally {
             setIsLoading(false);
         }

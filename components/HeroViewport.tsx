@@ -230,7 +230,7 @@ useGLTF.preload("/models/cell.glb");
 
 export const HeroViewport = () => {
     return (
-        <div className="fixed inset-0 w-full h-full -z-10 bg-[var(--color-background)]">
+        <div className="fixed top-0 left-0 w-full h-[100lvh] -z-10 bg-[var(--color-background)]">
             <Canvas
                 shadows
                 camera={{ position: [0, 0, 7], fov: 35 }}

@@ -51,7 +51,7 @@ const Section = ({ title, type, items }: { title: string, type: SectionType, ite
                 {/* Underline removed per request */}
             </div>
 
-            <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 bg-transparent border-l border-[var(--color-border-main)] border-y w-full", borderColor)}>
+            <div className={cn("grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 bg-[var(--color-background)] border border-[var(--color-border-main)] w-full", borderColor)}>
                 {items.map(item => <CellCard key={item.id} item={item} />)}
             </div>
         </section>

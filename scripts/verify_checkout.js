@@ -1,38 +1,36 @@
-const { createClient } = require('@supabase/supabase-js');
-const dotenv = require('dotenv');
-const path = require('path');
+// Native fetch is supported in Node 18+
+async function verifyCheckout() {
+    try {
+        const payload = {
+            items: [
+                { id: "tp-50xg", quantity: 1, model: "Tenpower 50XG" }
+            ],
+            email: "liambrt@gmail.com",
+            shipping: {
+                name: "Liam Thomas",
+                line1: "1, The Crescent",
+                city: "Stapleford",
+                postal_code: "NG9 8JA",
+                country: "GB"
+            },
+            voucherCode: "TEST_50XG_1P"
+        };
 
-// Load environment variables
-dotenv.config({ path: path.resolve(__dirname, '../.env.local') });
+        console.log("Testing Checkout API with payload:", JSON.stringify(payload, null, 2));
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        const response = await fetch('http://localhost:3000/api/checkout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
 
-if (!supabaseUrl || !supabaseKey) {
-    console.error("Missing Supabase URL or Service Role Key.");
-    console.log("URL present:", !!supabaseUrl);
-    console.log("Service Key present:", !!supabaseKey);
-    process.exit(1);
-}
+        const text = await response.text();
+        console.log("Response Status:", response.status);
+        console.log("Response Body:", text);
 
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-async function check() {
-    console.log("Querying checkouts table for ALL records...");
-    const { data, error } = await supabase
-        .from('checkouts')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-    if (error) {
-        console.error("Error querying checkouts:", error);
-    } else {
-        console.log(`Found ${data.length} records.`);
-        if (data.length > 0) {
-            console.log("Latest record:", JSON.stringify(data[0], null, 2));
-        }
+    } catch (e) {
+        console.error("Test Failed:", e);
     }
 }
 
-check();
+verifyCheckout();
