@@ -848,14 +848,13 @@ export const CartDrawer = () => {
                                             <div className="w-full space-y-4">
                                                 {/* SOCIAL */}
                                                 <div className="space-y-2">
-                                                    <button onClick={() => handleSocialLogin('google')} className="bg-[#EA4335] text-white font-bold py-3 text-xs uppercase hover:opacity-90 flex items-center justify-center gap-2">
-                                                        <span className="font-mono-spec">GOOGLE</span>
-                                                    </button>
                                                     <div className="grid grid-cols-2 gap-2">
-                                                        <button onClick={() => handleSocialLogin('apple')} className="bg-white text-black font-bold py-3 text-xs uppercase hover:opacity-90 flex items-center justify-center gap-2">
+                                                        <button onClick={() => handleSocialLogin('google')} className="w-full bg-[#EA4335] text-white font-bold py-3 text-xs uppercase hover:opacity-90 flex items-center justify-center gap-2">
+                                                            <span className="font-mono-spec">GOOGLE</span>
+                                                        </button>
+                                                        <button onClick={() => handleSocialLogin('apple')} className="w-full bg-white text-black font-bold py-3 text-xs uppercase hover:opacity-90 flex items-center justify-center gap-2">
                                                             <span className="font-mono-spec">APPLE</span>
                                                         </button>
-
                                                     </div>
                                                 </div>
 
