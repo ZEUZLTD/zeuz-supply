@@ -3,6 +3,8 @@ import { getProducts } from '../products/product-actions';
 import { Voucher } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 export default async function VouchersPage({ searchParams = {} }: { searchParams?: { edit?: string } }) {
     console.log("[ADMIN] VouchersPage Render Initiated");
 
