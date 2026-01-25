@@ -98,9 +98,8 @@ export const DischargeGraph = ({ type, products }: DischargeGraphProps) => {
     const allCells = graphData.cells;
 
     // Toggles for visible cells (Default all true)
-    // We can't rely on useState initializer for prop-derived data if props change late
-    // So we use a derived state or effect? NO, simplicity: just default to all visible if state missing
     const [hiddenCells, setHiddenCells] = useState<Record<string, boolean>>({});
+    const [showRaw, setShowRaw] = useState(false);
 
     const isVisible = (cell: string) => !hiddenCells[cell];
 
@@ -198,6 +197,18 @@ export const DischargeGraph = ({ type, products }: DischargeGraphProps) => {
                             {amp}A
                         </button>
                     ))}
+                    {/* RAW LOGS TOGGLE */}
+                    <button
+                        onClick={() => setShowRaw(!showRaw)}
+                        className={cn(
+                            "px-3 py-1 text-xs font-bold border transition-colors ml-4",
+                            showRaw
+                                ? "bg-red-500 text-white border-red-500 animate-pulse"
+                                : "bg-transparent text-black/30 border-black/10 hover:border-black"
+                        )}
+                    >
+                        RAW_LOGS
+                    </button>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
@@ -277,6 +288,17 @@ export const DischargeGraph = ({ type, products }: DischargeGraphProps) => {
                     <div className="text-sm">CONSTANT CURRENT DISCHARGE</div>
                 </div>
             </div>
+
+            {/* RAW DATA OVERLAY */}
+            {showRaw && (
+                <div className="absolute inset-0 bg-black/90 backdrop-blur-sm z-50 p-4 overflow-auto font-mono text-[10px] text-green-400">
+                    <div className="mb-2 font-bold text-white border-b border-white/20 pb-2 flex justify-between">
+                        <span>BATCH_METRICS // JSON_DUMP</span>
+                        <button onClick={() => setShowRaw(false)} className="text-red-500 hover:text-white">[CLOSE]</button>
+                    </div>
+                    <pre>{JSON.stringify(graphData.data, null, 2)}</pre>
+                </div>
+            )}
         </div >
     );
 };

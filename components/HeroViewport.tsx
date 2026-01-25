@@ -233,6 +233,7 @@ export const HeroViewport = () => {
         <div className="fixed top-0 left-0 w-full h-[100lvh] -z-10 bg-[var(--color-background)]">
             <Canvas
                 shadows
+                dpr={[1, 1.5]} // Cap DPR to 1.5 for performance
                 camera={{ position: [0, 0, 7], fov: 35 }}
                 gl={{ antialias: true }}
                 eventSource={typeof document !== 'undefined' ? document.body : undefined}

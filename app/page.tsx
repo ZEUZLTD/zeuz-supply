@@ -3,6 +3,7 @@ import { INVENTORY } from "@/data/inventory";
 import fs from 'fs';
 import path from 'path';
 import { HomeView } from "@/components/HomeView";
+import { StoreHydrator } from "@/components/StoreHydrator";
 import { InventoryItem, SectionType } from "@/lib/types";
 import { getSettings } from "@/app/admin/marketing/actions";
 import type { Metadata } from "next";
@@ -187,6 +188,7 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <HomeView inventory={inventory} settings={settings} />
+      <StoreHydrator inventory={inventory} />
     </>
   );
 }
