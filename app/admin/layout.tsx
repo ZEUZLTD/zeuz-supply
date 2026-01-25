@@ -26,6 +26,7 @@ export default function AdminLayout({
                     <Link href="/admin/products" className="hover:text-amber-500">PRODUCTS</Link>
                     <Link href="/admin/orders" className="hover:text-amber-500">ORDERS</Link>
                     <Link href="/admin/vouchers" className="hover:text-amber-500">VOUCHERS</Link>
+                    <Link href="/admin/discounts" className="hover:text-amber-500">DISCOUNTS</Link>
                     <Link href="/" className="bg-black text-white px-3 py-1 text-xs font-bold uppercase hover:bg-amber-500 hover:text-black transition-colors">
                         EXIT TO STORE
                     </Link>

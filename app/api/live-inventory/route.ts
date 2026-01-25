@@ -64,7 +64,17 @@ export async function GET(request: Request) {
             };
         });
 
-        return NextResponse.json(liveMap);
+        // 2. Fetch Active Volume Discounts (Cacheable)
+        const { data: volumeTiers } = await supabaseServer
+            .from('volume_discounts')
+            .select('min_quantity, discount_percent')
+            .eq('active', true)
+            .order('min_quantity', { ascending: true });
+
+        return NextResponse.json({
+            products: liveMap,
+            volume_discounts: volumeTiers || []
+        });
 
     } catch (e) {
         console.error("API_FATAL", e);

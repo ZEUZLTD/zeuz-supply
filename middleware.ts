@@ -60,11 +60,7 @@ export async function middleware(request: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser()
 
     // 3. Admin Guard
-    const isDevBypass = request.cookies.get('zeuz_dev_admin')?.value === 'true';
-
     if (request.nextUrl.pathname.startsWith('/admin') && !request.nextUrl.pathname.startsWith('/admin/dev-login')) {
-        if (isDevBypass) return NextResponse.next();
-
         // A. Must be logged in
         if (!user) {
             return NextResponse.redirect(new URL('/', request.url))

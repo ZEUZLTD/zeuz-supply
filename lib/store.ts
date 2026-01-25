@@ -17,7 +17,13 @@ interface ContactContext {
     quantity?: number | string;
 }
 
+interface VolumeTier {
+    min_quantity: number;
+    discount_percent: number;
+}
+
 interface UIStore {
+    // ... existing ...
     activeSection: SectionType;
     setActiveSection: (section: SectionType) => void;
     newsletterSource: string | null;
@@ -37,6 +43,7 @@ interface UIStore {
 
 interface CartStore {
     items: CartItem[];
+    volumeTiers: VolumeTier[];
     isOpen: boolean;
     activeTab: 'cart' | 'account';
     addItem: (item: Omit<CartItem, "quantity">, qty?: number) => void;
@@ -73,6 +80,7 @@ export const useCartStore = create<CartStore>()(
     persist(
         (set, get) => ({
             items: [],
+            volumeTiers: [],
             isOpen: false,
             activeTab: 'cart',
             addItem: (item, qty = 1) => {
@@ -110,24 +118,22 @@ export const useCartStore = create<CartStore>()(
             total: () => {
                 return get().items.reduce((sum, item) => {
                     const lineTotal = item.price * item.quantity;
-
-                    // Tiered Discount Logic
-                    // 1-1: 0%
-                    // 2-9: 5%
-                    // 10-49: 10%
-                    // 50-99: 15%
-                    // 100+: 20%
-                    let discount = 0;
                     const q = item.quantity;
 
-                    if (q >= 100) discount = 0.20;
-                    else if (q >= 50) discount = 0.15;
-                    else if (q >= 10) discount = 0.10;
-                    else if (q >= 2) discount = 0.05;
+                    // Dynamic Volume Tiers
+                    // Find largest tier that satisfies q >= min_quantity
+                    const tiers = get().volumeTiers || [];
+                    const activeTier = tiers
+                        .slice() // Copy to sort safely
+                        .sort((a, b) => b.min_quantity - a.min_quantity)
+                        .find(t => q >= t.min_quantity);
+
+                    const discount = activeTier ? (activeTier.discount_percent / 100) : 0;
 
                     return sum + (lineTotal * (1 - discount));
                 }, 0);
             },
+
 
             subtotal: () => get().items.reduce((sum, item) => sum + item.price * item.quantity, 0),
 
@@ -143,7 +149,12 @@ export const useCartStore = create<CartStore>()(
                     const res = await fetch(`/api/live-inventory?ids=${ids.join(',')}&_t=${Date.now()}`);
                     if (!res.ok) throw new Error("API Failed");
 
-                    const liveMap = await res.json();
+                    const data = await res.json();
+                    // Fallback for old API response style if needed, though we just changed it
+                    const liveMap = data.products || data;
+                    const tiers = data.volume_discounts || [];
+
+                    set({ volumeTiers: tiers });
 
                     if (liveMap) {
                         set(state => ({

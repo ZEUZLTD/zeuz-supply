@@ -24,8 +24,9 @@ export async function POST(request: Request) {
         // --- SECURE PRICE VERIFICATION ---
         const { createClient } = await import('@supabase/supabase-js');
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_KEY!;
-        const supabase = createClient(supabaseUrl, supabaseKey);
+        // USE SERVICE ROLE KEY FOR STRICT VERIFICATION (Bypasses RLS)
+        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_KEY!;
+        const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
         const ids = items.map((i: any) => i.id);
 
@@ -64,6 +65,13 @@ export async function POST(request: Request) {
             console.error("Database Error or No Products Found", dbError);
             return NextResponse.json({ error: `Price Verification Failed: ${dbError?.message || 'Product Not Found'}` }, { status: 500 });
         }
+
+        // --- FETCH ACTIVE VOLUME DISCOUNTS ---
+        const { data: volumeTiers } = await supabase
+            .from('volume_discounts')
+            .select('min_quantity, discount_percent')
+            .eq('active', true)
+            .order('min_quantity', { ascending: true });
 
         // --- VOUCHER VALIDATION ---
         let voucher: any = null;
@@ -106,14 +114,21 @@ export async function POST(request: Request) {
             // Trusted Price Calculation
             let finalPrice = dbProduct.price_gbp;
 
-            // 1. VOLUME DISCOUNTS (Replica of Frontend Logic)
-            // 1-1: 0%, 2-9: 5%, 10-49: 10%, 50-99: 15%, 100+: 20%
+            // 1. VOLUME DISCOUNTS (Dynamic DB Check)
             let volDiscount = 0;
             const q = clientItem.quantity;
-            if (q >= 100) volDiscount = 0.20;
-            else if (q >= 50) volDiscount = 0.15;
-            else if (q >= 10) volDiscount = 0.10;
-            else if (q >= 2) volDiscount = 0.05;
+
+            if (volumeTiers && volumeTiers.length > 0) {
+                // Find highest matching tier
+                // sort descending just in case DB sort failed
+                const activeTier = volumeTiers
+                    .sort((a: any, b: any) => b.min_quantity - a.min_quantity)
+                    .find((t: any) => q >= t.min_quantity);
+
+                if (activeTier) {
+                    volDiscount = activeTier.discount_percent / 100;
+                }
+            }
 
             finalPrice = finalPrice * (1 - volDiscount);
 
