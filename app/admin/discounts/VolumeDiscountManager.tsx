@@ -143,7 +143,7 @@ export function VolumeDiscountManager() {
 
             <div className="p-6 space-y-4 flex-1">
                 {/* Header */}
-                <div className="grid grid-cols-12 gap-4 text-xs font-bold text-gray-400 uppercase tracking-wider px-4">
+                <div className="hidden md:grid grid-cols-12 gap-4 text-xs font-bold text-gray-400 uppercase tracking-wider px-4">
                     <div className="col-span-2">Min Qty</div>
                     <div className="col-span-2">Discount %</div>
                     <div className="col-span-4">Label (Optional)</div>
@@ -154,8 +154,9 @@ export function VolumeDiscountManager() {
                 {/* List */}
                 <div className="space-y-2">
                     {tiers.map((tier) => (
-                        <div key={tier.id} className="grid grid-cols-12 gap-4 items-center bg-gray-50 p-4 border border-gray-100 rounded-lg hover:border-gray-200 transition-colors group">
-                            <div className="col-span-2">
+                        <div key={tier.id} className="grid grid-cols-2 md:grid-cols-12 gap-4 items-center bg-gray-50 p-4 border border-gray-100 rounded-lg hover:border-gray-200 transition-colors group">
+                            <div className="col-span-1 md:col-span-2">
+                                <label className="block md:hidden text-[10px] uppercase font-bold text-gray-400 mb-1">Min Qty</label>
                                 <input
                                     type="number"
                                     value={tier.min_quantity}
@@ -163,16 +164,18 @@ export function VolumeDiscountManager() {
                                     className="w-full bg-white border border-gray-200 px-2 py-1 text-black font-mono text-sm rounded focus:border-black outline-none"
                                 />
                             </div>
-                            <div className="col-span-2 relative">
+                            <div className="col-span-1 md:col-span-2 relative">
+                                <label className="block md:hidden text-[10px] uppercase font-bold text-gray-400 mb-1">Discount %</label>
                                 <input
                                     type="number"
                                     value={tier.discount_percent}
                                     onChange={(e) => handleUpdate(tier.id, { discount_percent: parseFloat(e.target.value) || 0 })}
                                     className="w-full bg-white border border-gray-200 px-2 py-1 text-amber-600 font-bold font-mono text-sm rounded focus:border-black outline-none"
                                 />
-                                <span className="absolute right-3 top-1.5 text-xs text-gray-400 font-mono">%</span>
+                                <span className="absolute right-3 top-7 md:top-1.5 text-xs text-gray-400 font-mono">%</span>
                             </div>
-                            <div className="col-span-4">
+                            <div className="col-span-2 md:col-span-4">
+                                <label className="block md:hidden text-[10px] uppercase font-bold text-gray-400 mb-1">Label</label>
                                 <input
                                     type="text"
                                     value={tier.label || ''}
@@ -181,7 +184,8 @@ export function VolumeDiscountManager() {
                                     placeholder="Add Label..."
                                 />
                             </div>
-                            <div className="col-span-2 flex justify-center">
+                            <div className="col-span-1 md:col-span-2 flex justify-start md:justify-center items-center gap-2 md:gap-0">
+                                <span className="block md:hidden text-[10px] uppercase font-bold text-gray-400">Active</span>
                                 <button
                                     onClick={() => handleUpdate(tier.id, { active: !tier.active })}
                                     className={`w-10 h-6 rounded-full relative transition-colors ${tier.active ? 'bg-green-500' : 'bg-gray-200'}`}
@@ -189,7 +193,7 @@ export function VolumeDiscountManager() {
                                     <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${tier.active ? 'left-5' : 'left-1'}`} />
                                 </button>
                             </div>
-                            <div className="col-span-2 flex justify-end gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
+                            <div className="col-span-1 md:col-span-2 flex justify-end gap-2 md:opacity-50 md:group-hover:opacity-100 transition-opacity">
                                 <button onClick={() => handleDelete(tier.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors" title="Delete"><Trash2 size={16} /></button>
                             </div>
                         </div>
@@ -203,8 +207,9 @@ export function VolumeDiscountManager() {
                 </div>
 
                 {/* New Tier Form */}
-                <div className="grid grid-cols-12 gap-4 items-center bg-white p-4 border border-dashed border-gray-300 rounded-lg mt-8 opacity-75 hover:opacity-100 transition-all">
-                    <div className="col-span-2">
+                <div className="grid grid-cols-2 md:grid-cols-12 gap-4 items-center bg-white p-4 border border-dashed border-gray-300 rounded-lg mt-8 opacity-75 hover:opacity-100 transition-all">
+                    <div className="col-span-1 md:col-span-2">
+                        <label className="block md:hidden text-[10px] uppercase font-bold text-gray-400 mb-1">New Min Qty</label>
                         <input
                             type="number"
                             placeholder="Qty"
@@ -213,7 +218,8 @@ export function VolumeDiscountManager() {
                             className="w-full bg-gray-50 border border-gray-200 px-2 py-1 text-black font-mono text-sm rounded focus:border-black outline-none"
                         />
                     </div>
-                    <div className="col-span-2">
+                    <div className="col-span-1 md:col-span-2">
+                        <label className="block md:hidden text-[10px] uppercase font-bold text-gray-400 mb-1">New Discount %</label>
                         <input
                             type="number"
                             placeholder="%"
@@ -222,7 +228,8 @@ export function VolumeDiscountManager() {
                             className="w-full bg-gray-50 border border-gray-200 px-2 py-1 text-black font-mono text-sm rounded focus:border-black outline-none"
                         />
                     </div>
-                    <div className="col-span-4">
+                    <div className="col-span-2 md:col-span-4">
+                        <label className="block md:hidden text-[10px] uppercase font-bold text-gray-400 mb-1">New Label</label>
                         <input
                             type="text"
                             placeholder="Label (e.g. Wholesale)"
@@ -231,13 +238,13 @@ export function VolumeDiscountManager() {
                             className="w-full bg-transparent border-b border-gray-200 text-gray-600 font-mono text-sm focus:border-black outline-none px-2"
                         />
                     </div>
-                    <div className="col-span-4 text-right">
+                    <div className="col-span-2 md:col-span-4 text-right mt-2 md:mt-0">
                         <button
                             onClick={handleAdd}
                             disabled={!newTier.min_quantity || !newTier.discount_percent}
-                            className="bg-black text-white px-4 py-2 text-xs font-bold uppercase rounded hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                            className="bg-black text-white px-4 py-2 text-xs font-bold uppercase rounded hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm w-full md:w-auto flex justify-center md:inline-flex items-center gap-2"
                         >
-                            <span className="flex items-center gap-2"><Plus size={14} /> Add Queue</span>
+                            <Plus size={14} /> Add Queue
                         </button>
                     </div>
                 </div>

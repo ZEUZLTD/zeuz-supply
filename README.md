@@ -55,6 +55,7 @@ The `/admin` dashboard provides direct manipulation of the ZEUZ ecosystem.
 -   **Fulfillment Control**: Enhanced order processing workflow with granular status updates and better fulfilling controls.
 -   **Performance Optimization**: TBT (Total Blocking Time) optimized by removing shadow DOM overheads for maximum responsiveness.
 -   **Security**: The legacy dev-cookie backdoor has been deprecated in favor of a strict **RBAC (Role Based Access Control)** model tied to Supabase Auth.
+-   **Mobile Infrastructure**: Complete mobile rework of the Admin Dashboard. Features a responsive paranoid-navigation system, touch-optimized inventory management for on-the-go adjustments, and flexible grids for real-time monitoring on any device.
 
 ---
 

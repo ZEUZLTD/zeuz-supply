@@ -47,8 +47,9 @@ export default async function AdminDashboard() {
                 </div>
 
                 {/* RECENT ORDERS */}
-                <div className="bg-white p-6 border border-gray-200 shadow-sm">
-                    <div className="flex items-center justify-between mb-6">
+                {/* RECENT ORDERS */}
+                <div className="bg-white p-6 border border-gray-200 shadow-sm overflow-hidden">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
                         <h2 className="text-xl font-bold">RECENT ORDERS</h2>
                         <Link href="/admin/orders" className="text-xs font-bold uppercase text-amber-600 hover:text-amber-500 flex items-center gap-1">
                             VIEW ALL <ArrowRight className="w-3 h-3" />
@@ -60,14 +61,14 @@ export default async function AdminDashboard() {
                             <div className="text-center py-8 text-gray-400 italic text-sm">No orders yet.</div>
                         ) : (
                             recentOrders.map((order: any) => (
-                                <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-100">
-                                    <div>
+                                <div key={order.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 border border-gray-100 gap-2">
+                                    <div className="flex justify-between w-full sm:w-auto sm:block">
                                         <div className="font-bold text-sm">#{order.stripe_session_id?.slice(-8) || order.id.slice(0, 8)}</div>
-                                        <div className="text-xs text-gray-500">{new Date(order.created_at).toLocaleDateString()}</div>
+                                        <div className="text-xs text-gray-500 sm:mt-1">{new Date(order.created_at).toLocaleDateString()}</div>
                                     </div>
-                                    <div className="text-right">
+                                    <div className="flex justify-between w-full sm:w-auto sm:block sm:text-right items-center sm:items-end">
                                         <div className="font-mono text-sm font-bold">£{(order.amount_total / 100).toFixed(2)}</div>
-                                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 ${order.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                                        <span className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded-sm sm:mt-1 inline-block ${order.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                                             }`}>
                                             {order.status}
                                         </span>
