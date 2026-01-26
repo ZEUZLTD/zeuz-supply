@@ -1,6 +1,7 @@
 import { getOrderKPIs, getRecentOrders, getSalesOverTime } from './actions';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { cn } from '@/lib/utils';
 
 const SalesChart = dynamic(() => import('./sales-chart'), {
     ssr: false,
@@ -54,24 +55,43 @@ export default async function OrdersPage() {
                             <th className="p-4 border-b">ID</th>
                             <th className="p-4 border-b">Date</th>
                             <th className="p-4 border-b">Customer</th>
+                            <th className="p-4 border-b">Items</th>
                             <th className="p-4 border-b">Total</th>
                             <th className="p-4 border-b">Status</th>
-                            {/* <th className="p-4 border-b text-right">Action</th> */}
+                            <th className="p-4 border-b text-right"></th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 font-mono">
                         {recentOrders.map((order) => (
-                            <tr key={order.id} className="hover:bg-gray-50 transition-colors">
-                                <td className="p-4 text-xs opacity-50">{order.id.substring(0, 8)}...</td>
+                            <tr key={order.id} className="hover:bg-gray-50 transition-colors group">
+                                <td className="p-4 text-xs opacity-50 font-mono">
+                                    <Link href={`/admin/orders/${order.id}`} className="hover:text-blue-600 hover:underline">
+                                        {order.id.substring(0, 8)}...
+                                    </Link>
+                                </td>
                                 <td className="p-4">{new Date(order.created_at).toLocaleDateString()}</td>
                                 <td className="p-4 font-bold">{order.customer_email || 'Guest'}</td>
-                                <td className="p-4 text-[#FF4400]">£{((order.amount_total || 0) / 100).toFixed(2)}</td>
+                                <td className="p-4 text-xs text-gray-500">
+                                    {order.items ? (Array.isArray(order.items) ? order.items.length : '1') : '-'}
+                                </td>
+                                <td className="p-4 text-[#FF4400] font-mono">£{((order.amount_total || 0) / 100).toFixed(2)}</td>
                                 <td className="p-4">
-                                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${order.status === 'PAID' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'}`}>
+                                    <span className={cn(
+                                        "px-2 py-1 rounded-full text-[10px] font-bold uppercase",
+                                        order.status === 'PAID' && "bg-green-100 text-green-700",
+                                        order.status === 'PROCESSING' && "bg-blue-100 text-blue-700",
+                                        order.status === 'SHIPPED' && "bg-purple-100 text-purple-700",
+                                        order.status === 'DELIVERED' && "bg-gray-100 text-gray-700",
+                                        order.status === 'REFUNDED' && "bg-red-100 text-red-700"
+                                    )}>
                                         {order.status}
                                     </span>
                                 </td>
-                                {/* <td className="p-4 text-right"><Link href={`/admin/orders/${order.id}`} className="underline">VIEW</Link></td> */}
+                                <td className="p-4 text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Link href={`/admin/orders/${order.id}`} className="text-xs bg-gray-900 text-white px-3 py-1.5 rounded-md font-bold uppercase hover:bg-black">
+                                        View
+                                    </Link>
+                                </td>
                             </tr>
                         ))}
                         {recentOrders.length === 0 && (

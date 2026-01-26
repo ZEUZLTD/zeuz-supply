@@ -90,3 +90,31 @@ export async function getSalesOverTime() {
     // Convert to Array
     return Array.from(salesMap.entries()).map(([date, revenue]) => ({ date, revenue }));
 }
+
+export async function getOrder(id: string) {
+    const supabase = await getSupabase();
+    const { data, error } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+    if (error) throw error;
+    return data;
+}
+
+export async function updateOrderStatus(id: string, status: string, tracking?: string, carrier?: string) {
+    const supabase = await getSupabase();
+
+    const updateData: any = { status };
+    if (tracking) updateData.tracking_number = tracking;
+    if (carrier) updateData.carrier = carrier;
+
+    const { error } = await supabase
+        .from('orders')
+        .update(updateData)
+        .eq('id', id);
+
+    if (error) throw error;
+    return { success: true };
+}

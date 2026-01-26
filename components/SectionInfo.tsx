@@ -1,6 +1,5 @@
 "use client";
 
-import { cn } from "@/lib/utils";
 import { SectionType, InventoryItem } from "@/lib/types";
 import { useRef } from "react";
 import { useInView } from "framer-motion";
@@ -12,11 +11,11 @@ const DischargeGraph = dynamic(() => import('./DischargeGraph').then(mod => mod.
 });
 
 export const SectionInfo = ({ type, products }: { type: SectionType, products: InventoryItem[] }) => {
-    if (type === 'PROTOTYPE') return null;
-
     const ref = useRef(null);
     // Trigger when within 200px of viewport
     const isInView = useInView(ref, { once: true, margin: "200px" });
+
+    if (type === 'PROTOTYPE') return null;
 
     return (
         <div ref={ref} className="col-span-full border-b border-[var(--color-border-main)] bg-white text-black font-mono-spec flex flex-col justify-center" id={`${type}_INFO`}>

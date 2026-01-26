@@ -1,7 +1,7 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Environment, Float, useGLTF, ContactShadows } from "@react-three/drei";
+import { Environment, Float, useGLTF } from "@react-three/drei";
 import { useRef, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 import { useUIStore } from "@/lib/store";
@@ -61,34 +61,43 @@ const GLBCell = () => {
         });
     }, [clonedScene]);
 
-    // Generate Grainy/Metallic Texture (Procedural Noise)
-    const grainTexture = useMemo(() => {
-        if (typeof document === 'undefined') return null;
-        const canvas = document.createElement('canvas');
-        canvas.width = 256;
-        canvas.height = 256;
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-            // Fill with mid-grey
-            ctx.fillStyle = '#888888';
-            ctx.fillRect(0, 0, 256, 256);
+    // Generate Grainy/Metallic Texture (Async to avoid blocking main thread)
+    const [grainTexture, setGrainTexture] = useState<THREE.Texture | null>(null);
 
-            // Add noise
-            const imageData = ctx.getImageData(0, 0, 256, 256);
-            const data = imageData.data;
-            for (let i = 0; i < data.length; i += 4) {
-                const noise = (Math.random() - 0.5) * 50;
-                data[i] = Math.min(255, Math.max(0, data[i] + noise));
-                data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + noise));
-                data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + noise));
+    useEffect(() => {
+        if (typeof document === 'undefined') return;
+
+        // Defer generation to next tick/idle
+        const generateTexture = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                // Fill with mid-grey
+                ctx.fillStyle = '#888888';
+                ctx.fillRect(0, 0, 256, 256);
+
+                // Add noise
+                const imageData = ctx.getImageData(0, 0, 256, 256);
+                const data = imageData.data;
+                for (let i = 0; i < data.length; i += 4) {
+                    const noise = (Math.random() - 0.5) * 50;
+                    data[i] = Math.min(255, Math.max(0, data[i] + noise));
+                    data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + noise));
+                    data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + noise));
+                }
+                ctx.putImageData(imageData, 0, 0);
             }
-            ctx.putImageData(imageData, 0, 0);
-        }
-        const tex = new THREE.CanvasTexture(canvas);
-        tex.wrapS = THREE.RepeatWrapping;
-        tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(4, 4); // Tile it more for finer grain
-        return tex;
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(4, 4);
+            setGrainTexture(tex);
+        };
+
+        const timer = setTimeout(generateTexture, 100);
+        return () => clearTimeout(timer);
     }, []);
 
     // Animation Loop
@@ -168,6 +177,34 @@ const GLBCell = () => {
     const finalScale = isMobile ? 70 : 113; // Fixed scales for stability
 
 
+    const FakeShadow = () => {
+        // Static shadow texture - generated once, low perf cost
+        const texture = useMemo(() => {
+            if (typeof document === 'undefined') return null;
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                const gradient = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+                gradient.addColorStop(0, 'rgba(0,0,0,0.4)');
+                gradient.addColorStop(1, 'rgba(0,0,0,0)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, 128, 128);
+            }
+            return new THREE.CanvasTexture(canvas);
+        }, []);
+
+        if (!texture) return null;
+
+        return (
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.8, 0]}>
+                <planeGeometry args={[2, 2]} />
+                <meshBasicMaterial map={texture} transparent opacity={0.5} depthWrite={false} toneMapped={false} />
+            </mesh>
+        );
+    };
+
     return (
         <>
             <CameraAdjuster />
@@ -180,7 +217,7 @@ const GLBCell = () => {
                     </group>
                 </group>
             </Float>
-            <ContactShadows opacity={0.6} scale={10} blur={2} far={4} resolution={256} color="#000000" />
+            <FakeShadow />
         </>
     )
 }

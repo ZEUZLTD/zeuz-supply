@@ -71,7 +71,7 @@ async function getInventory(): Promise<InventoryItem[]> {
         category: i.category as SectionType,
         status: i.status as InventoryItem['status'],
         price: i.price ?? null,
-        graph_data: null,
+        graph_data: undefined,
         priority: 99
       }));
     }
@@ -168,9 +168,19 @@ async function getInventory(): Promise<InventoryItem[]> {
   }
 }
 
+async function getVolumeDiscounts() {
+  const { data } = await supabaseServer
+    .from('volume_discounts')
+    .select('min_quantity, discount_percent')
+    .eq('active', true)
+    .order('min_quantity', { ascending: true });
+  return data || [];
+}
+
 export default async function Home() {
   const inventory = await getInventory();
   const settings = await getSettings();
+  const volumeTiers = await getVolumeDiscounts();
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -188,7 +198,7 @@ export default async function Home() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <HomeView inventory={inventory} settings={settings} />
-      <StoreHydrator inventory={inventory} />
+      <StoreHydrator inventory={inventory} volumeTiers={volumeTiers} />
     </>
   );
 }

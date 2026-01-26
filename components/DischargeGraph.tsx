@@ -67,7 +67,9 @@ export const DischargeGraph = ({ type, products }: DischargeGraphProps) => {
 
         const dataMap: { [cellName: string]: CellCurves } = {};
         relevantProducts.forEach(p => {
-            dataMap[p.model] = p.graph_data;
+            if (p.graph_data) {
+                dataMap[p.model] = p.graph_data as unknown as CellCurves;
+            }
         });
 
         return {

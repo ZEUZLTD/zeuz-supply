@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef } from 'react';
-import { InventoryItem } from '@/lib/types';
+import { InventoryItem, VolumeTier } from '@/lib/types';
 import { useCartStore } from '@/lib/store';
 
-export const StoreHydrator = ({ inventory }: { inventory: InventoryItem[] }) => {
+export const StoreHydrator = ({ inventory, volumeTiers = [] }: { inventory: InventoryItem[], volumeTiers?: VolumeTier[] }) => {
     // We use a ref to ensure this only runs once per hydration
     const initialized = useRef(false);
 
@@ -12,6 +12,7 @@ export const StoreHydrator = ({ inventory }: { inventory: InventoryItem[] }) => 
         if (!initialized.current) {
             // Hydrate the store's item prices if they exist in cart
             useCartStore.setState((state) => ({
+                volumeTiers: volumeTiers.length > 0 ? volumeTiers : state.volumeTiers,
                 items: state.items.map(cartItem => {
                     const freshItem = inventory.find(i => i.id === cartItem.id);
                     if (freshItem) {
@@ -28,7 +29,7 @@ export const StoreHydrator = ({ inventory }: { inventory: InventoryItem[] }) => 
 
             initialized.current = true;
         }
-    }, [inventory]);
+    }, [inventory, volumeTiers]);
 
     return null;
 };

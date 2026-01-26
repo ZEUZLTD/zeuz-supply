@@ -60,6 +60,7 @@ export const metadata: Metadata = {
 import { Navbar } from "@/components/Navbar";
 
 import { ThemeManager } from "@/components/ThemeManager";
+import { OrderConfirmation } from "@/components/OrderConfirmation";
 import { DeploymentVersion } from "@/components/DeploymentVersion";
 
 export default async function RootLayout({
@@ -81,6 +82,9 @@ export default async function RootLayout({
             enabled={settings.find((s: any) => s.key === 'SHOW_SPLASH')?.value ?? true}
             message={settings.find((s: any) => s.key === 'SPLASH_MESSAGE')?.value}
           />
+        </React.Suspense>
+        <React.Suspense fallback={null}>
+          <OrderConfirmation />
         </React.Suspense>
         <CartDrawer />
         <DeploymentVersion />

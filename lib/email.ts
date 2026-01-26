@@ -12,7 +12,7 @@ const supabase = createClient(
 interface SendEmailParams {
     key: string;
     to: string;
-    data: Record<string, any>;
+    data: Record<string, unknown>;
 }
 
 export async function sendTransactionalEmail({ key, to, data }: SendEmailParams) {

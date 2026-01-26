@@ -189,6 +189,9 @@ export async function POST(request: Request) {
                     currency: 'gbp',
                     product_data: {
                         name: dbProduct.name,
+                        metadata: {
+                            supabase_id: dbProduct.id
+                        }
                     },
                     unit_amount: Math.round(finalPrice * 100), // Stripe expects integers (pence)
                 },
@@ -284,7 +287,7 @@ export async function POST(request: Request) {
             line_items: lineItems,
             mode: 'payment',
             customer_email: email,
-            success_url: `${process.env.NEXT_PUBLIC_URL}/?success=true`,
+            success_url: `${process.env.NEXT_PUBLIC_URL}/?success=true&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${process.env.NEXT_PUBLIC_URL}/`,
             metadata: {
                 source: 'zeuz_v1',

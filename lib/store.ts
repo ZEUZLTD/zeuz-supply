@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { User } from '@supabase/supabase-js';
+import { VolumeTier } from './types';
 
 export interface CartItem {
     id: string;
@@ -17,10 +19,7 @@ interface ContactContext {
     quantity?: number | string;
 }
 
-interface VolumeTier {
-    min_quantity: number;
-    discount_percent: number;
-}
+// VolumeTier moved to types.ts
 
 interface UIStore {
     // ... existing ...
@@ -34,11 +33,13 @@ interface UIStore {
     setHoveredProduct: (model: string | null) => void;
     themeColor: string;
     setThemeColor: (color: string) => void;
-    user: any | null;
-    setUser: (user: any | null) => void;
+    user: User | null;
+    setUser: (user: User | null) => void;
     contactMode: 'NEWSLETTER' | 'STOCK_NOTIFY' | 'PROTO_WAITLIST' | 'BULK_QUOTE' | 'GENERAL';
     contactContext: ContactContext | null;
     setContactMode: (mode: UIStore['contactMode'], context?: ContactContext) => void;
+    orderRefreshSignal: number;
+    triggerOrderRefresh: () => void;
 }
 
 interface CartStore {
@@ -74,6 +75,8 @@ export const useUIStore = create<UIStore>((set) => ({
     contactMode: 'NEWSLETTER',
     contactContext: null,
     setContactMode: (mode, context) => set({ contactMode: mode, contactContext: context || null }),
+    orderRefreshSignal: 0,
+    triggerOrderRefresh: () => set({ orderRefreshSignal: Date.now() }),
 }));
 
 export const useCartStore = create<CartStore>()(

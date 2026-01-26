@@ -1,14 +1,12 @@
 "use client";
 
-import { useCartStore, useUIStore } from "@/lib/store";
+import { useCartStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
-import { ShoppingCart } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 
 
 export const Navbar = () => {
     const { items, toggleCart, openAccount } = useCartStore();
-    const { setActiveSection } = useUIStore();
     const [mounted, setMounted] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
     const [showMenu, setShowMenu] = useState(false);

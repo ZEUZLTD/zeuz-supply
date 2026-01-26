@@ -12,7 +12,17 @@ export function useLiveInventory(initialInventory: InventoryItem[]) {
                 // Cache Busting: Append timestamp
                 const res = await fetch(`/api/live-inventory?_t=${Date.now()}`);
                 if (!res.ok) return;
-                const liveMap = await res.json();
+                const data = await res.json();
+
+                // Handle new API structure { products: ..., volume_discounts: ... }
+                const liveMap = data.products || data;
+                const tiers = data.volume_discounts;
+
+                // Sync Global Volume Tiers if available
+                if (tiers) {
+                    const { useCartStore } = await import('@/lib/store');
+                    useCartStore.setState({ volumeTiers: tiers });
+                }
 
                 if (liveMap) {
                     setInventory(prev => prev.map(item => {

@@ -1,6 +1,11 @@
 
 export type SectionType = "POWER" | "ENERGY" | "PROTOTYPE";
 
+export interface VolumeTier {
+    min_quantity: number;
+    discount_percent: number;
+}
+
 export interface InventoryItem {
     id: string;
     model: string;
@@ -19,7 +24,7 @@ export interface InventoryItem {
     standard_charge_a?: number;
     max_discharge_a?: number;
     ac_impedance_mohm?: number;
-    graph_data?: any;
+    graph_data?: Record<string, unknown>;
     priority: number;
     batch_test_url?: string | null;
     slug?: string;
@@ -44,11 +49,11 @@ export interface Order {
     id: string;
     stripe_session_id: string;
     customer_email: string;
-    shipping_address: any;
+    shipping_address: Record<string, unknown>;
     status: string;
     amount_total: number;
     currency: string;
-    items: any[];
+    items: Record<string, unknown>[];
     created_at: string;
 }
 

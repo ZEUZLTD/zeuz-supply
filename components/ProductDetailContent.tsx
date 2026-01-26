@@ -25,12 +25,15 @@ export const ProductDetailContent = ({ product: initialProduct, isModal = false,
     const product = useLiveProduct(initialProduct);
 
     const { user } = useUIStore();
-    const { addItem } = useCartStore();
+    const { addItem, volumeTiers } = useCartStore();
     const [quantity, setQuantity] = useState<number | string>(1);
     const [[page, direction], setPage] = useState([0, 0]);
     const [viewMode, setViewMode] = useState<'GALLERY' | 'DATASHEET' | 'MSDS' | 'BATCH'>('GALLERY');
     const [autoSubscribed, setAutoSubscribed] = useState<'PROTO_WAITLIST' | 'STOCK_NOTIFY' | null>(null);
     const [useDefaultImages, setUseDefaultImages] = useState(false);
+
+    // Sort tiers for display
+    const sortedTiers = [...(volumeTiers || [])].sort((a, b) => a.min_quantity - b.min_quantity);
 
     // Reset state when product changes (crucial for both modal and page nav)
     useEffect(() => {
@@ -117,10 +120,17 @@ export const ProductDetailContent = ({ product: initialProduct, isModal = false,
 
     // Pricing Logic
     let discount = 0;
-    if (qtyNum >= 100) discount = 0.20;
-    else if (qtyNum >= 50) discount = 0.15;
-    else if (qtyNum >= 10) discount = 0.10;
-    else if (qtyNum >= 2) discount = 0.05;
+    const tiers = volumeTiers || [];
+
+    if (tiers.length > 0) {
+        const activeTier = tiers
+            .sort((a, b) => b.min_quantity - a.min_quantity) // Descending
+            .find(t => qtyNum >= t.min_quantity);
+
+        if (activeTier) {
+            discount = activeTier.discount_percent / 100;
+        }
+    }
 
     const basePrice = product.price || 0;
     const effectivePrice = basePrice * (1 - discount);
@@ -165,7 +175,7 @@ export const ProductDetailContent = ({ product: initialProduct, isModal = false,
                                     drag="x"
                                     dragConstraints={{ left: 0, right: 0 }}
                                     dragElastic={1}
-                                    onDragEnd={(e, { offset, velocity }) => {
+                                    onDragEnd={(e, { offset }) => {
                                         const swipe = offset.x;
                                         if (swipe < -50) {
                                             paginate(1);
@@ -329,28 +339,29 @@ export const ProductDetailContent = ({ product: initialProduct, isModal = false,
                             <div className="bg-zinc-900 text-white p-4 h-full border border-black/10">
                                 <h4 className="font-bold text-[10px] uppercase mb-4 tracking-widest text-zinc-400">VOLUME PROTOCOLS</h4>
                                 <div className="space-y-3 font-mono-spec text-sm">
-                                    {[
-                                        { qty: "2+", discount: "5%" },
-                                        { qty: "10+", discount: "10%" },
-                                        { qty: "50+", discount: "15%" },
-                                        { qty: "100+", discount: "20%" }
-                                    ].map((tier) => {
-                                        const isActive =
-                                            (tier.qty === "2+" && qtyNum >= 2 && qtyNum < 10) ||
-                                            (tier.qty === "10+" && qtyNum >= 10 && qtyNum < 50) ||
-                                            (tier.qty === "50+" && qtyNum >= 50 && qtyNum < 100) ||
-                                            (tier.qty === "100+" && qtyNum >= 100);
+                                    {sortedTiers.length > 0 ? (
+                                        sortedTiers.map((tier) => {
+                                            const isActive = qtyNum >= tier.min_quantity &&
+                                                // It is active if it is the HIGHEST tier met
+                                                tier.min_quantity === [...sortedTiers].reverse().find(t => qtyNum >= t.min_quantity)?.min_quantity;
 
-                                        return (
-                                            <div key={tier.qty} className={cn(
-                                                "flex justify-between items-center p-3 border border-zinc-800 transition-colors",
-                                                isActive ? "bg-[var(--color-accent-brand)] text-black border-transparent font-bold" : "bg-transparent opacity-60"
-                                            )}>
-                                                <span>{tier.qty}</span>
-                                                <span>-{tier.discount}</span>
-                                            </div>
-                                        );
-                                    })}
+                                            // Actually simpler logic: Highlight if we are IN this bracket
+                                            // The previous logic was ranges. 
+                                            // Let's just highlight the active tier.
+
+                                            return (
+                                                <div key={tier.min_quantity} className={cn(
+                                                    "flex justify-between items-center p-3 border border-zinc-800 transition-colors",
+                                                    isActive ? "bg-[var(--color-accent-brand)] text-black border-transparent font-bold" : "bg-transparent opacity-60"
+                                                )}>
+                                                    <span>{tier.min_quantity}+ UNITS</span>
+                                                    <span>-{tier.discount_percent}%</span>
+                                                </div>
+                                            );
+                                        })
+                                    ) : (
+                                        <div className="text-xs opacity-50 italic">No volume discounts available.</div>
+                                    )}
                                 </div>
                             </div>
                         </div>

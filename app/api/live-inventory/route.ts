@@ -76,8 +76,8 @@ export async function GET(request: Request) {
             volume_discounts: volumeTiers || []
         });
 
-    } catch (e) {
-        console.error("API_FATAL", e);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    } catch (e: any) {
+        console.error("API_FATAL in /api/live-inventory:", e);
+        return NextResponse.json({ error: e.message || "Internal Server Error", stack: e.stack }, { status: 500 });
     }
 }

@@ -49,9 +49,11 @@ To prevent overselling during high-traffic drops, we implement **Option B: Post-
 The `/admin` dashboard provides direct manipulation of the ZEUZ ecosystem.
 
 ### **Current Operational Modules**
--   **Dynamic Pricing Matrix**: A real-time editor for **Volume Discounts**. Adjust bulk quantity triggers (e.g., 2+, 10+, 100+) and their associated percentages instantly across the site.
+-   **Dynamic Pricing Matrix**: A real-time editor for **Volume Discounts**. Adjust bulk quantity triggers (e.g., 2+, 10+, 100+) and their associated percentages instantly across the site. Loads dynamically from Supabase for instant updates.
 -   **Infra-Marketing Control**: Toggle the "Global Splash" system, manage "Launch Counters," and adjust site-wide banners.
 -   **Voucher Authority**: Create complex discount logic (Fixed, Percent, Fixed-Price, Free Shipping) with global usage limits and product-specific whitelists.
+-   **Fulfillment Control**: Enhanced order processing workflow with granular status updates and better fulfilling controls.
+-   **Performance Optimization**: TBT (Total Blocking Time) optimized by removing shadow DOM overheads for maximum responsiveness.
 -   **Security**: The legacy dev-cookie backdoor has been deprecated in favor of a strict **RBAC (Role Based Access Control)** model tied to Supabase Auth.
 
 ---

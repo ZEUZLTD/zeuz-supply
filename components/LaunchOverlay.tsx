@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { cn } from "@/lib/utils";
 
 export const LaunchOverlay = ({ enabled = true, title, subtitle }: { enabled?: boolean, title?: string, subtitle?: string }) => {
     const [isOpen, setIsOpen] = useState(false);

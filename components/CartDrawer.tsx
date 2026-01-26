@@ -17,7 +17,7 @@ export const CartDrawer = () => {
     // ... existing hooks ...
 
     const { items, isOpen, toggleCart, removeItem, updateQuantity, clearCart, total, subtotal, activeTab, syncPrices } = useCartStore();
-    const { setThemeColor, setUser } = useUIStore();
+    const { setThemeColor, setUser, orderRefreshSignal } = useUIStore();
     const [isLoading, setIsLoading] = useState(false);
     const [mounted, setMounted] = useState(false);
 
@@ -111,6 +111,13 @@ export const CartDrawer = () => {
 
         return () => subscription.unsubscribe();
     }, []);
+
+    // Listen for global order refresh signals (e.g. from OrderConfirmation)
+    useEffect(() => {
+        if (session) {
+            fetchOrders();
+        }
+    }, [orderRefreshSignal, session]);
 
     const fetchTheme = async (userId: string) => {
         const { data } = await supabase.from('profiles').select('theme_color, role').eq('id', userId).single();
@@ -594,13 +601,16 @@ export const CartDrawer = () => {
                                                                 </div>
                                                                 <div className="flex flex-col items-end">
                                                                     {(() => {
-                                                                        // Calculate Item Discount (Same logic as store/total)
+                                                                        // Dynamic Volume Tiers (Local Item Display)
                                                                         let discount = 0;
                                                                         const q = item.quantity;
-                                                                        if (q >= 100) discount = 0.20;
-                                                                        else if (q >= 50) discount = 0.15;
-                                                                        else if (q >= 10) discount = 0.10;
-                                                                        else if (q >= 2) discount = 0.05;
+                                                                        // Note: we need access to tiers here, simpler to grab from store state in render
+                                                                        const tiers = useCartStore.getState().volumeTiers || [];
+                                                                        const activeTier = tiers
+                                                                            .sort((a, b) => b.min_quantity - a.min_quantity)
+                                                                            .find(t => q >= t.min_quantity);
+
+                                                                        if (activeTier) discount = activeTier.discount_percent / 100;
 
                                                                         const finalPrice = item.price * (1 - discount);
 
@@ -910,13 +920,52 @@ export const CartDrawer = () => {
                                         ) : (
                                             <div className="space-y-3">
                                                 {orders.map(order => (
-                                                    <div key={order.id} className="border border-[var(--color-border-main)] p-4 bg-[#0A0A0A] hover:border-[var(--color-foreground)] transition-colors">
-                                                        <div className="flex justify-between mb-2">
-                                                            <span className="font-mono-spec text-xs text-[var(--color-accent-brand)]">{new Date(order.created_at).toLocaleDateString()}</span>
-                                                            <span className="font-mono-spec text-[10px] opacity-50 text-[var(--color-foreground)]">#{order.id.slice(0, 6)}</span>
+                                                    <div key={order.id} className="border border-[var(--color-border-main)] bg-[#0A0A0A] hover:border-[var(--color-foreground)] transition-colors group">
+                                                        <div className="p-4 border-b border-[var(--color-border-main)] flex justify-between items-start">
+                                                            <div>
+                                                                <div className="flex items-center gap-2 mb-1">
+                                                                    <span className={cn(
+                                                                        "px-1.5 py-0.5 text-[9px] font-bold uppercase border",
+                                                                        order.status === 'PAID' && "bg-green-100 text-green-700 border-green-200",
+                                                                        order.status === 'PROCESSING' && "bg-blue-100 text-blue-700 border-blue-200",
+                                                                        order.status === 'SHIPPED' && "bg-purple-100 text-purple-700 border-purple-200",
+                                                                        order.status === 'DELIVERED' && "bg-gray-100 text-gray-700 border-gray-200",
+                                                                        order.status === 'REFUNDED' && "bg-red-100 text-red-700 border-red-200",
+                                                                        (!order.status || order.status === 'PENDING') && "bg-gray-800 text-gray-300 border-gray-700"
+                                                                    )}>
+                                                                        {order.status || 'PENDING'}
+                                                                    </span>
+                                                                    <span className="font-mono-spec text-[10px] opacity-50 text-[var(--color-foreground)]">#{order.id.slice(0, 6)}</span>
+                                                                </div>
+                                                                <div className="font-mono-spec text-[10px] text-[var(--color-accent-brand)]">{new Date(order.created_at).toLocaleDateString()}</div>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <div className="font-bold font-mono-spec text-sm">£{((order.amount_total || 0) / 100).toFixed(2)}</div>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex justify-between items-end">
-                                                            <span className="text-[10px] font-bold bg-[var(--color-foreground)] text-[var(--color-background)] px-1.5 py-0.5">{order.status}</span>
+
+                                                        {/* Fulfilmment Info */}
+                                                        {order.tracking_number && (
+                                                            <div className="bg-[#111] px-4 py-2 flex items-center gap-2 border-b border-[var(--color-border-main)]">
+                                                                <Truck size={12} className="text-[var(--color-accent-brand)]" />
+                                                                <div className="text-[10px] font-mono-spec text-[var(--color-foreground)]">
+                                                                    <span className="opacity-50 uppercase mr-1">{order.carrier || 'TRACKING'}:</span>
+                                                                    <span className="font-bold tracking-wider">{order.tracking_number}</span>
+                                                                </div>
+                                                            </div>
+                                                        )}
+
+                                                        {/* Items Summary */}
+                                                        <div className="p-4 space-y-2">
+                                                            {order.items && Array.isArray(order.items) && order.items.map((item: any, i: number) => (
+                                                                <div key={i} className="flex justify-between items-center text-[10px] text-[var(--color-foreground)] font-mono-spec">
+                                                                    <div className="flex gap-2">
+                                                                        <span className="opacity-50">{item.quantity}x</span>
+                                                                        <span>{item.description}</span>
+                                                                    </div>
+                                                                    <span className="opacity-50">£{(item.amount_total / 100).toFixed(2)}</span>
+                                                                </div>
+                                                            ))}
                                                         </div>
                                                     </div>
                                                 ))}

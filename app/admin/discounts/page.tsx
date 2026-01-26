@@ -2,13 +2,16 @@ import { VolumeDiscountManager } from "./VolumeDiscountManager";
 
 export default function DiscountsPage() {
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-end border-b border-[#333] pb-4">
+        <div className="space-y-8 pb-20">
+            <div className="flex justify-between items-center border-b border-gray-200 pb-6">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tighter text-white mb-2">DYNAMIC PRICING</h1>
-                    <p className="text-[#666] font-mono text-sm max-w-2xl">
-                        Configure automated volume-based discount tiers. These rules apply globally to all products unless overridden by specific exceptions. Changes update in real-time.
+                    <h1 className="text-4xl font-black text-black">DYNAMIC PRICING</h1>
+                    <p className="text-gray-500 font-mono text-sm mt-2 max-w-2xl">
+                        Global volume discount rules. Updates propagate to the storefront immediately.
                     </p>
+                </div>
+                <div className="text-right">
+                    <p className="text-xs font-bold uppercase text-gray-400 bg-gray-100 px-3 py-1 rounded-full">System Wide</p>
                 </div>
             </div>
 

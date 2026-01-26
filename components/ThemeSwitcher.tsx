@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
+import { Session } from "@supabase/supabase-js";
 
 const THEME_COLORS = [
     '#D946EF', // Neon Purple (Default)
@@ -16,7 +17,7 @@ const THEME_COLORS = [
     'RAINBOW', // Special Gradient Mode
 ];
 
-export const ThemeSwitcher = ({ session }: { session?: any }) => {
+export const ThemeSwitcher = ({ session }: { session?: Session | null }) => {
     const { themeColor, setThemeColor } = useUIStore();
     const [isOpen, setIsOpen] = useState(false);
 
