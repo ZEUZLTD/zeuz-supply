@@ -53,7 +53,9 @@ The `/admin` dashboard provides direct manipulation of the ZEUZ ecosystem.
 -   **Infra-Marketing Control**: Toggle the "Global Splash" system, manage "Launch Counters," and adjust site-wide banners.
 -   **Voucher Authority**: Create complex discount logic (Fixed, Percent, Fixed-Price, Free Shipping) with global usage limits and product-specific whitelists.
 -   **Fulfillment Control**: Enhanced order processing workflow with granular status updates and better fulfilling controls.
+-   **Abandoned Cart Recovery**: Automated "Cart Capture" system that saves incomplete checkouts to the database for retargeting, with integrated email recovery through Resend.
 -   **Performance Optimization**: TBT (Total Blocking Time) optimized by removing shadow DOM overheads for maximum responsiveness.
+-   **Deployment Tracking**: Publicly visible Git Commit SHA (v2.1.0) for version transparency.
 -   **Security**: The legacy dev-cookie backdoor has been deprecated in favor of a strict **RBAC (Role Based Access Control)** model tied to Supabase Auth.
 -   **Mobile Infrastructure**: Complete mobile rework of the Admin Dashboard. Features a responsive paranoid-navigation system, touch-optimized inventory management for on-the-go adjustments, and flexible grids for real-time monitoring on any device.
 

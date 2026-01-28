@@ -282,6 +282,33 @@ export async function POST(request: Request) {
             }
         }
 
+        // --- CART CAPTURE (ABANDONED CART) ---
+        // Create a checkout record BEFORE going to Stripe
+        let checkoutId: string | null = null;
+        try {
+            const { data: checkoutData, error: checkoutError } = await supabase
+                .from('checkouts')
+                .insert({
+                    email,
+                    items, // Store raw client items for easy restoration
+                    status: 'OPEN',
+                    metadata: {
+                        shipping,
+                        voucher_code: voucherCode
+                    }
+                })
+                .select('id')
+                .single();
+
+            if (checkoutError) {
+                console.error("Failed to capture checkout:", checkoutError);
+            } else {
+                checkoutId = checkoutData.id;
+            }
+        } catch (err) {
+            console.error("Checkout capture exception:", err);
+        }
+
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
             line_items: lineItems,
@@ -292,9 +319,18 @@ export async function POST(request: Request) {
             metadata: {
                 source: 'zeuz_v1',
                 shipping_details: JSON.stringify(shipping),
-                voucher_code: voucher ? voucher.code : null
+                voucher_code: voucher ? voucher.code : null,
+                checkout_id: checkoutId // Link back to our DB
             }
         });
+
+        // Update Checkout with Session ID
+        if (checkoutId) {
+            await supabase
+                .from('checkouts')
+                .update({ session_id: session.id })
+                .eq('id', checkoutId);
+        }
 
         return NextResponse.json({ url: session.url });
     } catch (error: any) {
