@@ -42,6 +42,10 @@ To prevent overselling during high-traffic drops, we implement **Option B: Post-
 -   **Automatic Refund**: If stock is insufficient (Race Condition), the system *immediately* triggers a Stripe Refund and sends an apology email.
 -   **Result**: Zero risk of unfulfillable orders, even with millisecond-level concurrency.
 
+### **Logistics & Audit Protocols**
+-   **Geo-Locked Fulfillment**: Infrastructure is cryptographically restricted to **United Kingdom (GB)** contexts only. Attempted routing to non-compliant zones is rejected at the API level (Stripe Session Configuration).
+-   **Audit Fidelity**: Every transaction carries a payload of metadata (original unit cost vs. discount source) to ensure the financial ledger remains the single source of truth, immune to frontend pricing display errors.
+
 ---
 
 ## 3. ADMIN INFRASTRUCTURE // THE CONTROL DECK
