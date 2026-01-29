@@ -62,6 +62,7 @@ import { Navbar } from "@/components/Navbar";
 import { ThemeManager } from "@/components/ThemeManager";
 import { OrderConfirmation } from "@/components/OrderConfirmation";
 import { DeploymentVersion } from "@/components/DeploymentVersion";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export default async function RootLayout({
   children,
@@ -89,6 +90,7 @@ export default async function RootLayout({
         </React.Suspense>
         <CartDrawer />
         <DeploymentVersion />
+        <SpeedInsights />
         {children}
       </body>
     </html>
