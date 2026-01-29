@@ -3,12 +3,7 @@
 import { CellCard } from "@/components/CellCard";
 import { SectionType, useUIStore } from "@/lib/store";
 import { useEffect, useRef, useState } from "react";
-import dynamic from 'next/dynamic';
-
-const HeroViewport = dynamic(() => import('@/components/HeroViewport').then(mod => mod.HeroViewport), {
-    ssr: false,
-    loading: () => <div className="absolute inset-0 bg-transparent" /> // Invisible placeholder
-});
+import { HeroViewportOptimized } from "./HeroViewportOptimized";
 import { useInView } from "framer-motion";
 import { InventoryItem } from "@/lib/types";
 import { supabase } from "@/lib/supabase";
@@ -141,7 +136,7 @@ export const HomeView = ({ inventory: initialInventory, settings = [] }: { inven
 
             {/* Viewport - Fixed Background (-10) */}
             <div className="fixed inset-0 -z-10 pointer-events-auto">
-                <HeroViewport />
+                <HeroViewportOptimized />
             </div>
 
             {/* DYNAMIC FROSTING LAYER - Reduced Max Intensity */}
