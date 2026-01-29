@@ -71,8 +71,9 @@ export default async function RootLayout({
   const settings = await getSettings();
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`${interTight.variable} ${jetbrainsMono.variable} antialiased`}
       >
         <ThemeManager />

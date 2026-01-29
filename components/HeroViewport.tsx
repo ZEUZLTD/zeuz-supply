@@ -33,7 +33,7 @@ const GLBCell = () => {
         }
     }, [activeSection, themeColor]);
 
-    const targetMeshRef = useRef<THREE.MeshStandardMaterial | null>(null);
+    const targetMeshRef = useRef<THREE.MeshPhysicalMaterial | null>(null);
 
     // Initial Material Setup & Cache Reference
     useLayoutEffect(() => {
@@ -43,14 +43,18 @@ const GLBCell = () => {
                 mesh.castShadow = true;
                 mesh.receiveShadow = true;
 
-                // TARGET: Wrapper is 'mesh_0_2'
-                if (mesh.name === 'mesh_0_2') {
-                    // Clean Satin Material
-                    const baseMat = new THREE.MeshStandardMaterial({
+                // TARGET: Wrapper is 'mesh_0'
+                if (mesh.name === 'mesh_0') {
+                    // Tuned "Shrink-Wrap" Material
+                    const baseMat = new THREE.MeshPhysicalMaterial({
                         color: targetColor.current.clone(),
-                        roughness: 0.3,
-                        metalness: 0.2, // Satin
-                        envMapIntensity: 1.0,
+                        roughness: 0.1,
+                        metalness: 0.4,
+                        envMapIntensity: 1.5,
+                        reflectivity: 0.5,
+                        sheen: 0.05,
+                        sheenColor: new THREE.Color('#ffffff'),
+                        sheenRoughness: 0.5,
                     });
                     mesh.material = baseMat;
                     // Cache the material reference for the animation loop
@@ -61,8 +65,8 @@ const GLBCell = () => {
         });
     }, [clonedScene]);
 
-    // Generate Grainy/Metallic Texture (Async to avoid blocking main thread)
-    const [grainTexture, setGrainTexture] = useState<THREE.Texture | null>(null);
+    // Generate Wavy/Shrink-Wrap Noise Texture (Async to avoid blocking main thread)
+    const [wavyTexture, setWavyTexture] = useState<THREE.Texture | null>(null);
 
     useEffect(() => {
         if (typeof document === 'undefined') return;
@@ -70,30 +74,42 @@ const GLBCell = () => {
         // Defer generation to next tick/idle
         const generateTexture = () => {
             const canvas = document.createElement('canvas');
-            canvas.width = 256;
-            canvas.height = 256;
+            canvas.width = 512;
+            canvas.height = 512;
             const ctx = canvas.getContext('2d');
             if (ctx) {
-                // Fill with mid-grey
-                ctx.fillStyle = '#888888';
-                ctx.fillRect(0, 0, 256, 256);
-
-                // Add noise
-                const imageData = ctx.getImageData(0, 0, 256, 256);
+                const imageData = ctx.createImageData(512, 512);
                 const data = imageData.data;
-                for (let i = 0; i < data.length; i += 4) {
-                    const noise = (Math.random() - 0.5) * 50;
-                    data[i] = Math.min(255, Math.max(0, data[i] + noise));
-                    data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + noise));
-                    data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + noise));
+                const freq = 6.0; // Tuned Frequency
+
+                for (let y = 0; y < 512; y++) {
+                    for (let x = 0; x < 512; x++) {
+                        const nx = x / 512;
+                        const ny = y / 512;
+                        const i = (y * 512 + x) * 4;
+
+                        let v = 0;
+                        v += Math.sin(nx * freq * 8 + ny * 2);
+                        v += Math.sin(ny * freq * 10 - nx * 3);
+                        v += Math.sin((nx + ny) * freq * 5);
+                        v += Math.sin(Math.sqrt(nx * nx + ny * ny) * freq * 6);
+
+                        const val = (v + 4) / 8;
+                        const color = val * 255;
+
+                        data[i] = color;
+                        data[i + 1] = color;
+                        data[i + 2] = color;
+                        data[i + 3] = 255;
+                    }
                 }
                 ctx.putImageData(imageData, 0, 0);
             }
             const tex = new THREE.CanvasTexture(canvas);
             tex.wrapS = THREE.RepeatWrapping;
             tex.wrapT = THREE.RepeatWrapping;
-            tex.repeat.set(4, 4);
-            setGrainTexture(tex);
+            tex.repeat.set(1, 4); // Stretch waves along the cylinder
+            setWavyTexture(tex);
         };
 
         const timer = setTimeout(generateTexture, 100);
@@ -130,16 +146,16 @@ const GLBCell = () => {
 
             if (targetMeshRef.current) {
                 // Ensure metallic look
-                if (targetMeshRef.current.metalness !== 0.6) {
-                    targetMeshRef.current.metalness = 0.6;
-                    targetMeshRef.current.roughness = 0.2; // Softened from 0.4
-                    // Apply grain texture for metallic feel
-                    if (grainTexture && targetMeshRef.current.roughnessMap !== grainTexture) {
-                        targetMeshRef.current.roughnessMap = grainTexture;
-                        targetMeshRef.current.bumpMap = grainTexture;
-                        targetMeshRef.current.bumpScale = 0.002; // Softened from 0.005
-                        targetMeshRef.current.needsUpdate = true;
-                    }
+                if (targetMeshRef.current.metalness !== 0.4) {
+                    targetMeshRef.current.metalness = 0.4;
+                    targetMeshRef.current.roughness = 0.1;
+                }
+
+                // Ensure texture is applied as soon as it exists
+                if (wavyTexture && targetMeshRef.current.bumpMap !== wavyTexture) {
+                    targetMeshRef.current.bumpMap = wavyTexture;
+                    targetMeshRef.current.bumpScale = 0.1; // Tuned Bump Scale
+                    targetMeshRef.current.needsUpdate = true;
                 }
 
                 // Always restore solid color lerping (stripes removed)

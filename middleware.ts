@@ -61,6 +61,12 @@ export async function middleware(request: NextRequest) {
 
     // 3. Admin Guard
     if (request.nextUrl.pathname.startsWith('/admin') && !request.nextUrl.pathname.startsWith('/admin/dev-login')) {
+        // DEV BYPASS
+        const devCookie = request.cookies.get('zeuz_dev_admin')?.value;
+        if (process.env.NODE_ENV === 'development' && devCookie === 'true') {
+            return response;
+        }
+
         // A. Must be logged in
         if (!user) {
             return NextResponse.redirect(new URL('/', request.url))

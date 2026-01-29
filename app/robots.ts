@@ -6,7 +6,12 @@ export default function robots(): MetadataRoute.Robots {
         rules: {
             userAgent: '*',
             allow: '/',
-            disallow: '/account/',
+            disallow: [
+                '/admin/',
+                '/api/',
+                '/auth/',
+                '/account/',
+            ],
         },
         sitemap: 'https://zeuz.supply/sitemap.xml',
     };

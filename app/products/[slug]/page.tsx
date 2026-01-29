@@ -143,7 +143,7 @@ export default async function ProductPage({ params }: Props) {
     }
 
     // 3. JSON-LD Schema
-    const jsonLd = {
+    const productJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: product.model,
@@ -161,11 +161,40 @@ export default async function ProductPage({ params }: Props) {
         }
     };
 
+    const breadcrumbJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {
+                '@type': 'ListItem',
+                position: 1,
+                name: 'Home',
+                item: 'https://zeuz.supply'
+            },
+            {
+                '@type': 'ListItem',
+                position: 2,
+                name: product.category,
+                item: `https://zeuz.supply/#${product.category}`
+            },
+            {
+                '@type': 'ListItem',
+                position: 3,
+                name: product.model,
+                item: `https://zeuz.supply/products/${product.slug}`
+            }
+        ]
+    };
+
     return (
         <>
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(productJsonLd) }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
             />
             {/* Reuse the Content Component */}
             <ProductDetailContent product={product} isModal={false} />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useGLTF, Float, ContactShadows } from "@react-three/drei";
-import { useRef, useLayoutEffect, useMemo } from "react";
+import { useRef, useLayoutEffect, useMemo, useEffect, useState } from "react";
 import * as THREE from "three";
 import { useFrame } from "@react-three/fiber";
 
@@ -14,6 +14,8 @@ export const CADCell = () => {
     // Clone scene to prevent global mutation conflicts
     const clonedScene = useMemo(() => scene.clone(), [scene]);
 
+    const targetMeshRef = useRef<THREE.MeshPhysicalMaterial | null>(null);
+
     useLayoutEffect(() => {
         clonedScene.traverse((child) => {
             if ((child as THREE.Mesh).isMesh) {
@@ -22,21 +24,75 @@ export const CADCell = () => {
                 mesh.castShadow = true;
                 mesh.receiveShadow = true;
 
-                // VERIFIED TARGET: Wrapper is 'mesh_0_2'
-                if (mesh.name === 'mesh_0_2') {
-                    // Clean Satin Material - No Decal, No Texture
-                    const mat = new THREE.MeshStandardMaterial({
+                // VERIFIED TARGET: Wrapper is 'mesh_0'
+                if (mesh.name === 'mesh_0') {
+                    // Tuned "Shrink-Wrap" Material
+                    const mat = new THREE.MeshPhysicalMaterial({
                         color: new THREE.Color('#5928ED'), // Brand Purple
-                        roughness: 0.3,
-                        metalness: 0.2, // Satin finish
-                        envMapIntensity: 1.0,
+                        roughness: 0.1,
+                        metalness: 0.4,
+                        envMapIntensity: 1.5,
+                        reflectivity: 0.5,
+                        sheen: 0.05,
+                        sheenColor: new THREE.Color('#ffffff'),
+                        sheenRoughness: 0.5,
                     });
                     mesh.material = mat;
+                    targetMeshRef.current = mat;
                 }
-                // ELSE: Leave original material
             }
         });
     }, [clonedScene]);
+
+    // Generate Wavy/Shrink-Wrap Noise Texture
+    const [wavyTexture, setWavyTexture] = useState<THREE.Texture | null>(null);
+
+    useEffect(() => {
+        if (typeof document === 'undefined') return;
+
+        const generateTexture = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                const imageData = ctx.createImageData(512, 512);
+                const data = imageData.data;
+                const freq = 6.0; // Tuned Frequency
+
+                for (let y = 0; y < 512; y++) {
+                    for (let x = 0; x < 512; x++) {
+                        const nx = x / 512;
+                        const ny = y / 512;
+                        const i = (y * 512 + x) * 4;
+
+                        let v = 0;
+                        v += Math.sin(nx * freq * 8 + ny * 2);
+                        v += Math.sin(ny * freq * 10 - nx * 3);
+                        v += Math.sin((nx + ny) * freq * 5);
+                        v += Math.sin(Math.sqrt(nx * nx + ny * ny) * freq * 6);
+
+                        const val = (v + 4) / 8;
+                        const color = val * 255;
+
+                        data[i] = color;
+                        data[i + 1] = color;
+                        data[i + 2] = color;
+                        data[i + 3] = 255;
+                    }
+                }
+                ctx.putImageData(imageData, 0, 0);
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.repeat.set(1, 4); // Stretch waves along the cylinder
+            setWavyTexture(tex);
+        };
+
+        const timer = setTimeout(generateTexture, 100);
+        return () => clearTimeout(timer);
+    }, []);
 
     useFrame((state, delta) => {
         if (outerRef.current && innerRef.current) {
@@ -51,6 +107,13 @@ export const CADCell = () => {
             // Apply Rotations
             outerRef.current.rotation.x = THREE.MathUtils.lerp(outerRef.current.rotation.x, targetRotationX, delta * 0.8);
             innerRef.current.rotation.y = THREE.MathUtils.lerp(innerRef.current.rotation.y, mouseSpin, delta * 4);
+
+            // Apply Texture/Bump
+            if (targetMeshRef.current && wavyTexture && targetMeshRef.current.bumpMap !== wavyTexture) {
+                targetMeshRef.current.bumpMap = wavyTexture;
+                targetMeshRef.current.bumpScale = 0.1; // Tuned Bump Scale
+                targetMeshRef.current.needsUpdate = true;
+            }
         }
     });
 

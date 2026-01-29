@@ -58,9 +58,22 @@ The `/admin` dashboard provides direct manipulation of the ZEUZ ecosystem.
 -   **Voucher Authority**: Create complex discount logic (Fixed, Percent, Fixed-Price, Free Shipping) with global usage limits and product-specific whitelists.
 -   **Fulfillment Control**: Enhanced order processing workflow with granular status updates and better fulfilling controls.
 -   **Abandoned Cart Recovery**: Automated "Cart Capture" system that saves incomplete checkouts to the database for retargeting, with integrated email recovery through Resend.
+-   **Post-Purchase Fidelity**: A complete overhaul of the "Order Success" state. The Cart Drawer now transforms into a granular "Order Status" tracker (Paid -> Shipped -> Completed) with detailed financial breakdowns.
+-   **Transactional Communications**: High-fidelity email system powered by Resend. Automatically triggers branded, data-rich emails for Order Confirmations, Shipping Updates, and Stock Apologies.
 -   **Performance Optimization**: TBT (Total Blocking Time) optimized by removing shadow DOM overheads for maximum responsiveness.
 -   **Deployment Tracking**: Publicly visible Git Commit SHA (v2.1.0) for version transparency.
 -   **Security**: The legacy dev-cookie backdoor has been deprecated in favor of a strict **RBAC (Role Based Access Control)** model tied to Supabase Auth.
+-   **Dashboard Intelligence**: Advanced sales visualization engine with dynamic date navigation (Day, Week, Month, Year, Financial Year, Custom Range) and a focused "Order Fulfillment" summary to track paid, shipped, and completed orders efficiently.
+-   **Commerce Security**: Implemented **Geographic Checkout Locking** on Stripe sessions to prevent shipping rate exploitation. By enforcing "GB-only" shipping address collection at the payment gateway, we ensure that the shipping fees calculated on the frontend match the final delivery destination.
+-   **Promotion Analytics**: New financial reporting layer that isolates "Promotional Spend." A dedicated view tracks the financial impact of Volume Discounts vs. Voucher Codes, giving precise visibility into margin reduction from marketing activities.
+
+### **Tactical Communication Matrix**
+ZEUZ now operates a dedicated "Signal Intelligence" layer for automated user communications (`zeuz.supply` / `zeuz.co.uk`).
+-   **Resend Integration**: High-fidelity transactional email delivery.
+-   **Templated Protocols**: Database-driven email templates for "Order Shipped", "Contact Acknowledgment", and "Newsletter Welcome" events.
+-   **Industrial Design System**: All outgoing communications now match the site's "Void Black" and "Monospace" aesthetic.
+-   **Template Visualization**: Admin dashboard includes real-time HTML previewing for all email templates before deployment.
+-   **Manifest Visualization**: The order history UI provides a granular "Order Status" tracker (Paid -> Shipped -> Completed) with deep-linking to tracking checkpoints and financial breakdowns.
 -   **Mobile Infrastructure**: Complete mobile rework of the Admin Dashboard. Features a responsive paranoid-navigation system, touch-optimized inventory management for on-the-go adjustments, and flexible grids for real-time monitoring on any device.
 
 ---

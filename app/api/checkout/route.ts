@@ -190,7 +190,9 @@ export async function POST(request: Request) {
                     product_data: {
                         name: dbProduct.name,
                         metadata: {
-                            supabase_id: dbProduct.id
+                            supabase_id: dbProduct.id,
+                            original_unit_amount: Math.round(dbProduct.price_gbp * 100), // Original price
+                            discount_desc: voucher ? (voucher.code || 'VOUCHER') : (volDiscount > 0 ? `VOLUME -${volDiscount * 100}%` : '')
                         }
                     },
                     unit_amount: Math.round(finalPrice * 100), // Stripe expects integers (pence)
@@ -316,6 +318,9 @@ export async function POST(request: Request) {
             customer_email: email,
             success_url: `${process.env.NEXT_PUBLIC_URL}/?success=true&session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${process.env.NEXT_PUBLIC_URL}/`,
+            shipping_address_collection: {
+                allowed_countries: ['GB'], // LOCK TO UK ONLY
+            },
             metadata: {
                 source: 'zeuz_v1',
                 shipping_details: JSON.stringify(shipping),

@@ -48,12 +48,35 @@ export interface Batch {
 export interface Order {
     id: string;
     stripe_session_id: string;
+    stripe_payment_intent_id?: string;
     customer_email: string;
-    shipping_address: Record<string, unknown>;
+    shipping_address: {
+        name?: string;
+        line1?: string;
+        line2?: string;
+        city?: string;
+        postal_code?: string;
+        country?: string;
+    };
     status: string;
     amount_total: number;
     currency: string;
-    items: Record<string, unknown>[];
+    items: Array<{
+        description: string;
+        quantity: number;
+        amount_total: number;
+        price?: {
+            product?: string;
+            product_data?: {
+                metadata?: {
+                    original_unit_amount?: number;
+                    discount_desc?: string;
+                };
+            };
+        };
+    }>;
+    tracking_number?: string;
+    carrier?: string;
     created_at: string;
 }
 

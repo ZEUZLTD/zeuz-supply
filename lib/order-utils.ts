@@ -137,15 +137,30 @@ export async function handleOrderCompletion(session: Stripe.Checkout.Session) {
         return { error: 'Stock Validation Failed', refunded: true };
     }
 
+    // Parse Shipping from Metadata (Primary) or fallback to Stripe Customer Details
+    let shippingAddress = session.customer_details?.address;
+    if (session.metadata?.shipping_details) {
+        try {
+            shippingAddress = JSON.parse(session.metadata.shipping_details);
+        } catch (e) {
+            console.error("Failed to parse shipping metadata", e);
+        }
+    }
+
     // Success: Insert Order
     const { data: insertedOrder, error: orderError } = await supabaseAdmin.from('orders').insert({
         stripe_session_id: session.id,
+        stripe_payment_intent_id: session.payment_intent, // Capture PI for refunds
         customer_email: session.customer_details?.email,
-        shipping_address: session.customer_details?.address,
+        shipping_address: shippingAddress,
         status: session.payment_status === 'paid' ? 'PAID' : 'PENDING',
         amount_total: session.amount_total,
         currency: session.currency,
-        items: lineItems
+        items: lineItems,
+        metadata: {
+            ...session.metadata, // Spread original session metadata (shipping, etc)
+            voucher_code: session.metadata?.voucher_code // Ensure explicit voucher capture
+        }
     }).select().single();
 
     if (orderError) {

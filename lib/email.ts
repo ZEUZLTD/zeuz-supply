@@ -45,7 +45,7 @@ export async function sendTransactionalEmail({ key, to, data }: SendEmailParams)
 
         // 3. Send via Resend
         const { data: resendData, error: resendError } = await resend.emails.send({
-            from: 'Zeuz Supply <orders@zeuz.supply>', // Ensure domain is verified or use onboarding@resend.dev
+            from: 'Zeuz Supply <orders@zeuz.co.uk>', // Ensure domain is verified or use onboarding@resend.dev
             to: [to],
             subject: subject,
             html: html
@@ -61,6 +61,24 @@ export async function sendTransactionalEmail({ key, to, data }: SendEmailParams)
 
     } catch (e) {
         console.error('Send Transactional Email Exception:', e);
+        return { success: false, error: e };
+    }
+}
+
+export async function sendBatchEmail(params: { from?: string, to: string[], subject: string, html: string }) {
+    // For Newsletter marketing bursts
+    try {
+        const { data, error } = await resend.emails.send({
+            from: params.from || 'Zeuz Supply <newsletter@zeuz.co.uk>',
+            to: params.to,
+            subject: params.subject,
+            html: params.html
+        });
+
+        if (error) throw error;
+        return { success: true, data };
+    } catch (e) {
+        console.error('Batch Email Error:', e);
         return { success: false, error: e };
     }
 }

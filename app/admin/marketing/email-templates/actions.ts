@@ -1,13 +1,16 @@
 'use server';
 
+import { createClient } from '@supabase/supabase-js';
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
-export async function getTemplates() {
+async function getAdminClient() {
     const cookieStore = cookies();
-    const supabase = createServerClient(
+
+    // 1. Setup Auth Checking Client (Standard)
+    const supabaseStandard = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_KEY!,
         {
@@ -17,24 +20,47 @@ export async function getTemplates() {
         }
     );
 
-    const { data } = await supabase.from('email_templates').select('*').order('created_at', { ascending: true });
-    return data || [];
+    // 2. Check Admin Status
+    const { data: { user } } = await supabaseStandard.auth.getUser();
+    const isDevAdmin = process.env.NODE_ENV === 'development' && cookieStore.get('zeuz_dev_admin')?.value === 'true';
+
+    let isAdmin = isDevAdmin;
+    if (!isAdmin && user) {
+        const { data: profile } = await supabaseStandard.from('profiles').select('role').eq('id', user.id).single();
+        if (profile?.role === 'admin') isAdmin = true;
+    }
+
+    if (!isAdmin) throw new Error('Unauthorized');
+
+    // 3. Return Service Role Client for power
+    return createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+}
+
+export async function getTemplates() {
+    try {
+        const supabase = await getAdminClient();
+        const { data, error } = await supabase.from('email_templates').select('*').order('updated_at', { ascending: true });
+        if (error) throw error;
+        return data || [];
+    } catch (e) {
+        console.error("getTemplates error", e);
+        return [];
+    }
 }
 
 export async function getTemplate(id: string) {
-    const cookieStore = cookies();
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_KEY!,
-        {
-            cookies: {
-                get(name: string) { return cookieStore.get(name)?.value; },
-            },
-        }
-    );
-
-    const { data } = await supabase.from('email_templates').select('*').eq('id', id).single();
-    return data;
+    try {
+        const supabase = await getAdminClient();
+        const { data, error } = await supabase.from('email_templates').select('*').eq('id', id).single();
+        if (error) throw error;
+        return data;
+    } catch (e) {
+        console.error("getTemplate error", e);
+        return null;
+    }
 }
 
 export async function upsertTemplate(data: FormData) {
@@ -44,21 +70,7 @@ export async function upsertTemplate(data: FormData) {
     const body_html = data.get('body_html') as string;
     const description = data.get('description') as string;
 
-    const cookieStore = cookies();
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_KEY!,
-        {
-            cookies: {
-                get(name: string) { return cookieStore.get(name)?.value; },
-            },
-        }
-    );
-
-    // RBAC
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Unauthorized');
-    // Assume admin check passed via layout or middleware usually, but good to check role if needed.
+    const supabase = await getAdminClient();
 
     const payload = {
         key,

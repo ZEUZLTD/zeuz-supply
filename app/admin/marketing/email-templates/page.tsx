@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { getTemplates } from './actions';
 import { Mail, Plus, Edit } from 'lucide-react';
+import EmailPreviewDialog from '@/components/admin/EmailPreviewDialog';
+
+export const dynamic = 'force-dynamic';
 
 export default async function EmailTemplatesPage() {
     const templates = await getTemplates();
@@ -49,7 +52,8 @@ export default async function EmailTemplatesPage() {
                                     <td className="p-4 text-gray-500">
                                         {new Date(t.updated_at).toLocaleDateString()}
                                     </td>
-                                    <td className="p-4 text-right">
+                                    <td className="p-4 text-right flex items-center justify-end gap-2">
+                                        <EmailPreviewDialog html={t.body_html} subject={t.subject} />
                                         <Link
                                             href={`/admin/marketing/email-templates/${t.id}`}
                                             className="inline-flex items-center gap-1 text-xs font-bold uppercase border border-gray-200 px-2 py-1 hover:bg-black hover:text-white transition-colors"

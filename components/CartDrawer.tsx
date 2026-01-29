@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import { usePathname } from "next/navigation";
 import { checkVoucherInternal } from "@/app/actions/vouchers";
+import { OrderDetailView } from "./OrderDetailView";
 
 export const CartDrawer = () => {
     const pathname = usePathname();
@@ -47,6 +48,7 @@ export const CartDrawer = () => {
     const [loginEmail, setLoginEmail] = useState("");
     const [magicLinkSent, setMagicLinkSent] = useState(false);
     const [orders, setOrders] = useState<any[]>([]);
+    const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
     // Shipping State
     const [shipping, setShipping] = useState({
@@ -843,138 +845,147 @@ export const CartDrawer = () => {
                                 )}
                             </>
                         )}
-                        {/* ... ACCOUNT tab unchanged ... */}
-                        {activeTab === 'account' && (
-                            <div className="flex-1 overflow-y-auto p-6">
-                                {/* ... content ... */}
-                                {!session ? (
-                                    <div className="flex flex-col h-full items-center justify-center text-center space-y-6">
-                                        <User size={48} className="text-[var(--color-foreground)] opacity-50" />
-                                        <div className="space-y-2 text-[var(--color-foreground)]">
-                                            <h3 className="font-bold tracking-tight">IDENTIFY</h3>
-                                            <p className="text-xs font-mono-spec opacity-60">ACCESS ORDER HISTORY</p>
+                        <>
+                            {activeTab === 'account' && (
+                                <div className="flex-1 overflow-y-auto p-6 h-full relative">
+                                    {selectedOrder ? (
+                                        <div className="absolute inset-0 bg-[var(--color-background)] z-10">
+                                            <OrderDetailView order={selectedOrder} onBack={() => setSelectedOrder(null)} />
                                         </div>
-
-                                        {!magicLinkSent ? (
-                                            <div className="w-full space-y-4">
-                                                {/* SOCIAL */}
-                                                <div className="space-y-2">
-                                                    <div className="grid grid-cols-2 gap-2">
-                                                        <button onClick={() => handleSocialLogin('google')} className="w-full bg-[#EA4335] text-white font-bold py-3 text-xs uppercase hover:opacity-90 flex items-center justify-center gap-2">
-                                                            <span className="font-mono-spec">GOOGLE</span>
-                                                        </button>
-                                                        <button onClick={() => handleSocialLogin('apple')} className="w-full bg-white text-black font-bold py-3 text-xs uppercase hover:opacity-90 flex items-center justify-center gap-2">
-                                                            <span className="font-mono-spec">APPLE</span>
-                                                        </button>
+                                    ) : (
+                                        <>
+                                            {/* ... content ... */}
+                                            {!session ? (
+                                                <div className="flex flex-col h-full items-center justify-center text-center space-y-6">
+                                                    <User size={48} className="text-[var(--color-foreground)] opacity-50" />
+                                                    <div className="space-y-2 text-[var(--color-foreground)]">
+                                                        <h3 className="font-bold tracking-tight">IDENTIFY</h3>
+                                                        <p className="text-xs font-mono-spec opacity-60">ACCESS ORDER HISTORY</p>
                                                     </div>
-                                                </div>
 
-                                                <div className="relative py-2">
-                                                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[var(--color-border-main)] opacity-30"></div></div>
-                                                    <div className="relative flex justify-center"><span className="bg-[var(--color-background)] px-2 text-[10px] uppercase opacity-50 font-mono-spec text-[var(--color-foreground)]">OR EMAIL</span></div>
-                                                </div>
-
-                                                <form onSubmit={handleLogin} className="w-full space-y-4">
-                                                    <input
-                                                        type="email"
-                                                        placeholder="EMAIL ADDRESS"
-                                                        value={loginEmail}
-                                                        onChange={e => setLoginEmail(e.target.value)}
-                                                        className="w-full bg-transparent border border-[var(--color-border-main)] p-3 text-center font-mono-spec text-xs focus:outline-none focus:border-[var(--color-foreground)] text-[var(--color-foreground)]"
-                                                        required
-                                                    />
-                                                    <button type="submit" className="w-full bg-transparent border border-[var(--color-foreground)] text-[var(--color-foreground)] font-bold py-3 text-xs uppercase hover:bg-[var(--color-foreground)] hover:text-[var(--color-background)] transition-colors">
-                                                        SEND MAGIC LINK
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        ) : (
-                                            <div className="bg-[var(--color-accent-brand)]/10 border border-[var(--color-accent-brand)] p-4 text-center">
-                                                <p className="text-[var(--color-accent-brand)] font-mono-spec text-xs mb-1">LINK SENT</p>
-                                                <p className="text-[10px] opacity-60 text-[var(--color-foreground)]">CHECK INBOX TO VERIFY</p>
-                                                <button onClick={() => setMagicLinkSent(false)} className="mt-4 text-[10px] underline text-[var(--color-foreground)] hover:text-[var(--color-accent-brand)]">TRY AGAIN</button>
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="space-y-6">
-                                        <div className="flex justify-between items-end border-b border-[var(--color-border-main)] pb-4 text-[var(--color-foreground)]">
-                                            <div>
-                                                <div className="text-[10px] font-mono-spec opacity-50 mb-1">OPERATOR</div>
-                                                <div className="text-sm font-bold">{session.user.email}</div>
-                                                {isAdminUser && (
-                                                    <a href="/admin" className="block mt-2 text-[10px] font-bold bg-amber-500 text-black px-2 py-1 w-fit hover:bg-white transition-colors">
-                                                        ADMIN CONTROL
-                                                    </a>
-                                                )}
-                                            </div>
-                                            <button onClick={handleLogout} className="text-[10px] font-mono-spec hover:text-[var(--color-accent-power)] uppercase">LOGOUT</button>
-                                        </div>
-
-                                        <h3 className="font-mono-spec text-xs font-bold uppercase tracking-wider text-[var(--color-accent-prototype)] mb-4 flex items-center gap-2">
-                                            <Package size={14} /> ORDER HISTORY
-                                        </h3>
-
-                                        {orders.length === 0 ? (
-                                            <div className="text-center py-12 opacity-50 font-mono-spec text-xs text-[var(--color-foreground)]">NO RECORDS FOUND</div>
-                                        ) : (
-                                            <div className="space-y-3">
-                                                {orders.map(order => (
-                                                    <div key={order.id} className="border border-[var(--color-border-main)] bg-[#0A0A0A] hover:border-[var(--color-foreground)] transition-colors group">
-                                                        <div className="p-4 border-b border-[var(--color-border-main)] flex justify-between items-start">
-                                                            <div>
-                                                                <div className="flex items-center gap-2 mb-1">
-                                                                    <span className={cn(
-                                                                        "px-1.5 py-0.5 text-[9px] font-bold uppercase border",
-                                                                        order.status === 'PAID' && "bg-green-100 text-green-700 border-green-200",
-                                                                        order.status === 'PROCESSING' && "bg-blue-100 text-blue-700 border-blue-200",
-                                                                        order.status === 'SHIPPED' && "bg-purple-100 text-purple-700 border-purple-200",
-                                                                        order.status === 'DELIVERED' && "bg-gray-100 text-gray-700 border-gray-200",
-                                                                        order.status === 'REFUNDED' && "bg-red-100 text-red-700 border-red-200",
-                                                                        (!order.status || order.status === 'PENDING') && "bg-gray-800 text-gray-300 border-gray-700"
-                                                                    )}>
-                                                                        {order.status || 'PENDING'}
-                                                                    </span>
-                                                                    <span className="font-mono-spec text-[10px] opacity-50 text-[var(--color-foreground)]">#{order.id.slice(0, 6)}</span>
-                                                                </div>
-                                                                <div className="font-mono-spec text-[10px] text-[var(--color-accent-brand)]">{new Date(order.created_at).toLocaleDateString()}</div>
+                                                    {!magicLinkSent ? (
+                                                        <div className="w-full space-y-4">
+                                                            {/* SOCIAL */}
+                                                            <div className="space-y-2">
+                                                                <button onClick={() => handleSocialLogin('google')} className="w-full bg-[#EA4335] text-white font-bold py-3 text-xs uppercase hover:opacity-90 flex items-center justify-center gap-2">
+                                                                    <span className="font-mono-spec">GOOGLE</span>
+                                                                </button>
                                                             </div>
-                                                            <div className="text-right">
-                                                                <div className="font-bold font-mono-spec text-sm">£{((order.amount_total || 0) / 100).toFixed(2)}</div>
+
+                                                            <div className="relative py-2">
+                                                                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-[var(--color-border-main)] opacity-30"></div></div>
+                                                                <div className="relative flex justify-center"><span className="bg-[var(--color-background)] px-2 text-[10px] uppercase opacity-50 font-mono-spec text-[var(--color-foreground)]">OR EMAIL</span></div>
                                                             </div>
+
+                                                            <form onSubmit={handleLogin} className="w-full space-y-4">
+                                                                <input
+                                                                    type="email"
+                                                                    placeholder="EMAIL ADDRESS"
+                                                                    value={loginEmail}
+                                                                    onChange={e => setLoginEmail(e.target.value)}
+                                                                    className="w-full bg-transparent border border-[var(--color-border-main)] p-3 text-center font-mono-spec text-xs focus:outline-none focus:border-[var(--color-foreground)] text-[var(--color-foreground)]"
+                                                                    required
+                                                                />
+                                                                <button type="submit" className="w-full bg-transparent border border-[var(--color-foreground)] text-[var(--color-foreground)] font-bold py-3 text-xs uppercase hover:bg-[var(--color-foreground)] hover:text-[var(--color-background)] transition-colors">
+                                                                    SEND MAGIC LINK
+                                                                </button>
+                                                            </form>
                                                         </div>
+                                                    ) : (
+                                                        <div className="bg-[var(--color-accent-brand)]/10 border border-[var(--color-accent-brand)] p-4 text-center">
+                                                            <p className="text-[var(--color-accent-brand)] font-mono-spec text-xs mb-1">LINK SENT</p>
+                                                            <p className="text-[10px] opacity-60 text-[var(--color-foreground)]">CHECK INBOX TO VERIFY</p>
+                                                            <button onClick={() => setMagicLinkSent(false)} className="mt-4 text-[10px] underline text-[var(--color-foreground)] hover:text-[var(--color-accent-brand)]">TRY AGAIN</button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-6">
+                                                    <div className="flex justify-between items-end border-b border-[var(--color-border-main)] pb-4 text-[var(--color-foreground)]">
+                                                        <div>
+                                                            <div className="text-[10px] font-mono-spec opacity-50 mb-1">OPERATOR</div>
+                                                            <div className="text-sm font-bold">{session.user.email}</div>
+                                                            {isAdminUser && (
+                                                                <a href="/admin" className="block mt-2 text-[10px] font-bold bg-amber-500 text-black px-2 py-1 w-fit hover:bg-white transition-colors">
+                                                                    ADMIN CONTROL
+                                                                </a>
+                                                            )}
+                                                        </div>
+                                                        <button onClick={handleLogout} className="text-[10px] font-mono-spec hover:text-[var(--color-accent-power)] uppercase">LOGOUT</button>
+                                                    </div>
 
-                                                        {/* Fulfilmment Info */}
-                                                        {order.tracking_number && (
-                                                            <div className="bg-[#111] px-4 py-2 flex items-center gap-2 border-b border-[var(--color-border-main)]">
-                                                                <Truck size={12} className="text-[var(--color-accent-brand)]" />
-                                                                <div className="text-[10px] font-mono-spec text-[var(--color-foreground)]">
-                                                                    <span className="opacity-50 uppercase mr-1">{order.carrier || 'TRACKING'}:</span>
-                                                                    <span className="font-bold tracking-wider">{order.tracking_number}</span>
-                                                                </div>
-                                                            </div>
-                                                        )}
+                                                    <h3 className="font-mono-spec text-xs font-bold uppercase tracking-wider text-[var(--color-accent-prototype)] mb-4 flex items-center gap-2">
+                                                        <Package size={14} /> ORDER HISTORY
+                                                    </h3>
 
-                                                        {/* Items Summary */}
-                                                        <div className="p-4 space-y-2">
-                                                            {order.items && Array.isArray(order.items) && order.items.map((item: any, i: number) => (
-                                                                <div key={i} className="flex justify-between items-center text-[10px] text-[var(--color-foreground)] font-mono-spec">
-                                                                    <div className="flex gap-2">
-                                                                        <span className="opacity-50">{item.quantity}x</span>
-                                                                        <span>{item.description}</span>
+                                                    {orders.length === 0 ? (
+                                                        <div className="text-center py-12 opacity-50 font-mono-spec text-xs text-[var(--color-foreground)]">NO RECORDS FOUND</div>
+                                                    ) : (
+                                                        <div className="space-y-3">
+                                                            {orders.map(order => (
+                                                                <div
+                                                                    key={order.id}
+                                                                    onClick={() => setSelectedOrder(order)}
+                                                                    className="border border-[var(--color-border-main)] bg-[#0A0A0A] hover:border-[var(--color-foreground)] transition-colors group cursor-pointer"
+                                                                >
+                                                                    <div className="p-4 border-b border-[var(--color-border-main)] flex justify-between items-start">
+                                                                        <div>
+                                                                            <div className="flex items-center gap-2 mb-1">
+                                                                                <span className={cn(
+                                                                                    "px-1.5 py-0.5 text-[9px] font-bold uppercase border",
+                                                                                    order.status === 'PAID' && "bg-green-100 text-green-700 border-green-200",
+                                                                                    order.status === 'PROCESSING' && "bg-blue-100 text-blue-700 border-blue-200",
+                                                                                    order.status === 'SHIPPED' && "bg-purple-100 text-purple-700 border-purple-200",
+                                                                                    order.status === 'DELIVERED' && "bg-gray-100 text-gray-700 border-gray-200",
+                                                                                    order.status === 'REFUNDED' && "bg-red-100 text-red-700 border-red-200",
+                                                                                    (!order.status || order.status === 'PENDING') && "bg-gray-800 text-gray-300 border-gray-700"
+                                                                                )}>
+                                                                                    {order.status || 'PENDING'}
+                                                                                </span>
+                                                                                <span className="font-mono-spec text-[10px] opacity-50 text-[var(--color-foreground)]">#{order.id.slice(0, 6)}</span>
+                                                                            </div>
+                                                                            <div className="font-mono-spec text-[10px] text-[var(--color-accent-brand)]">{new Date(order.created_at).toLocaleDateString()}</div>
+                                                                        </div>
+                                                                        <div className="text-right flex items-center gap-2">
+                                                                            <div className="font-bold font-mono-spec text-sm">£{((order.amount_total || 0) / 100).toFixed(2)}</div>
+                                                                            <ChevronRight size={14} className="opacity-0 group-hover:opacity-100 transition-opacity -mr-1" />
+                                                                        </div>
                                                                     </div>
-                                                                    <span className="opacity-50">£{(item.amount_total / 100).toFixed(2)}</span>
+
+                                                                    {/* Fulfilmment Info */}
+                                                                    {order.tracking_number && (
+                                                                        <div className="bg-[#111] px-4 py-2 flex items-center gap-2 border-b border-[var(--color-border-main)]">
+                                                                            <Truck size={12} className="text-[var(--color-accent-brand)]" />
+                                                                            <div className="text-[10px] font-mono-spec text-[var(--color-foreground)]">
+                                                                                <span className="opacity-50 uppercase mr-1">{order.carrier || 'TRACKING'}:</span>
+                                                                                <span className="font-bold tracking-wider">{order.tracking_number}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Items Summary */}
+                                                                    <div className="p-4 space-y-2">
+                                                                        {order.items && Array.isArray(order.items) && order.items.map((item: any, i: number) => (
+                                                                            <div key={i} className="flex justify-between items-center text-[10px] text-[var(--color-foreground)] font-mono-spec">
+                                                                                <div className="flex gap-2">
+                                                                                    <span className="opacity-50">{item.quantity}x</span>
+                                                                                    <span>{item.description}</span>
+                                                                                </div>
+                                                                                <span className="opacity-50">£{(item.amount_total ? item.amount_total / 100 : (item.price?.unit_amount * item.quantity) / 100 || 0).toFixed(2)}</span>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
                                                                 </div>
                                                             ))}
                                                         </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                                                    )}
+                                                </div>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                        </>
                     </motion.div>
                 </>
             )}

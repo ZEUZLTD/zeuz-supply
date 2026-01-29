@@ -360,6 +360,8 @@ const Footer = () => {
                                 <div className="flex flex-col md:flex-row gap-2">
                                     <input
                                         type="email"
+                                        id="newsletter-email"
+                                        name="email"
                                         required
                                         placeholder="EMAIL ADDRESS"
                                         value={email}

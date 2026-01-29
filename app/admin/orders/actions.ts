@@ -1,8 +1,11 @@
 'use server';
 
 import { createServerClient } from '@supabase/ssr';
+import Stripe from 'stripe';
 import { cookies } from 'next/headers';
 import { Order } from '@/lib/types';
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 // Helper to get authenticated Admin Client
 async function getSupabase() {
@@ -27,25 +30,30 @@ async function getSupabase() {
     return supabase;
 }
 
-export async function getOrderKPIs() {
+export async function getOrderKPIs(from?: string, to?: string) {
     const supabase = await getSupabase();
 
-    // Total Revenue & Count
-    // For large datasets, use count() and sum() in SQL/RPC. 
-    // MVP: fetch all orders (be careful if > 1000s, but for launch fine).
-    // Better MVP: .select('id, amount_total') to minimize data.
-    const { data, error } = await supabase
+    let query = supabase
         .from('orders')
-        .select('id, amount_total, status');
+        .select('id, amount_total, status, created_at');
+
+    if (from) query = query.gte('created_at', from);
+    if (to) query = query.lte('created_at', to);
+
+    const { data, error } = await query;
 
     if (error) throw error;
 
     const totalOrders = data.length;
-    // Amount total is in cents/pence
-    const totalRevenue = data.reduce((acc, order) => acc + (order.amount_total || 0), 0) / 100;
 
-    const paidOrders = data.filter(o => o.status === 'PAID');
-    const aov = paidOrders.length > 0 ? (totalRevenue / paidOrders.length) : 0;
+    // Only count revenue for valid paid orders
+    const validStatuses = ['PAID', 'SHIPPED', 'COMPLETED'];
+    const revenueOrders = data.filter(o => validStatuses.includes(o.status));
+
+    // Amount total is in cents/pence
+    const totalRevenue = revenueOrders.reduce((acc, order) => acc + (order.amount_total || 0), 0) / 100;
+
+    const aov = revenueOrders.length > 0 ? (totalRevenue / revenueOrders.length) : 0;
 
     return {
         totalOrders,
@@ -66,28 +74,67 @@ export async function getRecentOrders(limit = 10): Promise<Order[]> {
     return data as Order[];
 }
 
-export async function getSalesOverTime() {
+export async function getOrderFulfillmentStats() {
     const supabase = await getSupabase();
-    // Group by day.
-    // MVP: Fetch created_at and amount_total, group in JS.
+
+    // We want counts for: PAID, PROCESSING (if used), SHIPPED, COMPLETED
     const { data, error } = await supabase
         .from('orders')
-        .select('created_at, amount_total')
-        .eq('status', 'PAID')
-        .order('created_at', { ascending: true });
+        .select('status');
 
     if (error) throw error;
 
-    // Aggregate by Date (DD/MM)
+    const stats = {
+        to_fulfill: 0,
+        shipped: 0,
+        completed: 0
+    };
+
+    data.forEach(order => {
+        const s = order.status;
+        if (s === 'PAID') stats.to_fulfill++;
+        else if (s === 'SHIPPED') stats.shipped++;
+        else if (s === 'COMPLETED') stats.completed++;
+    });
+
+    return stats;
+}
+
+export async function getSalesOverTime(from?: string, to?: string, grouping: 'hour' | 'day' | 'month' = 'day') {
+    const supabase = await getSupabase();
+
+    let query = supabase
+        .from('orders')
+        .select('created_at, amount_total')
+        .in('status', ['PAID', 'SHIPPED', 'COMPLETED'])
+        .order('created_at', { ascending: true });
+
+    if (from) query = query.gte('created_at', from);
+    if (to) query = query.lte('created_at', to);
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+
     const salesMap = new Map<string, number>();
 
     data.forEach(order => {
-        const date = new Date(order.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' });
+        const dateObj = new Date(order.created_at);
+        let key: string;
+
+        if (grouping === 'hour') {
+            key = dateObj.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        } else if (grouping === 'month') {
+            key = dateObj.toLocaleDateString('en-GB', { month: 'short', year: '2-digit' });
+        } else {
+            // Default Daily
+            key = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit' });
+        }
+
         const val = (order.amount_total || 0) / 100;
-        salesMap.set(date, (salesMap.get(date) || 0) + val);
+        salesMap.set(key, (salesMap.get(key) || 0) + val);
     });
 
-    // Convert to Array
     return Array.from(salesMap.entries()).map(([date, revenue]) => ({ date, revenue }));
 }
 
@@ -116,5 +163,91 @@ export async function updateOrderStatus(id: string, status: string, tracking?: s
         .eq('id', id);
 
     if (error) throw error;
+
+    // Send Email if Shipped
+    if (status === 'SHIPPED') {
+        try {
+            // Need customer email
+            const { data: order } = await supabase.from('orders').select('customer_email').eq('id', id).single();
+
+            if (order?.customer_email) {
+                const { sendTransactionalEmail } = await import('@/lib/email');
+                await sendTransactionalEmail({
+                    key: 'order_shipped',
+                    to: order.customer_email,
+                    data: {
+                        order_id: id,
+                        tracking_number: tracking || 'PENDING',
+                        carrier: carrier || 'COURIER'
+                    }
+                });
+            }
+        } catch (e) {
+            console.error('Failed to send shipment email:', e);
+            // Don't fail the update
+        }
+    }
+
     return { success: true };
+}
+
+export async function refundOrder(orderId: string) {
+    const supabase = await getSupabase();
+
+    // Get Order to find Payment Intent
+    const { data: order, error: fetchError } = await supabase
+        .from('orders')
+        .select('id, stripe_session_id, stripe_payment_intent_id, amount_total, status')
+        .eq('id', orderId)
+        .single();
+
+    if (fetchError || !order) throw new Error("Order not found");
+
+    // Status Check
+    if (order.status === 'REFUNDED') throw new Error("Order already refunded");
+
+    let paymentIntentId = order.stripe_payment_intent_id;
+
+    // Self-Healing: If PI is missing, fetch it from Stripe Session
+    if (!paymentIntentId && order.stripe_session_id) {
+        try {
+            const session = await stripe.checkout.sessions.retrieve(order.stripe_session_id);
+            if (session.payment_intent) {
+                // Handle both string and object (though usually string unless expanded)
+                paymentIntentId = typeof session.payment_intent === 'string'
+                    ? session.payment_intent
+                    : session.payment_intent.id;
+
+                // Save it for future
+                await supabase.from('orders').update({ stripe_payment_intent_id: paymentIntentId }).eq('id', orderId);
+            }
+        } catch (e) {
+            console.error("Failed to retrieve session for PI lookup", e);
+        }
+    }
+
+    if (!paymentIntentId) throw new Error("No Payment Intent found (cannot refund via Stripe)");
+
+    try {
+        const refund = await stripe.refunds.create({
+            payment_intent: paymentIntentId,
+            reason: 'requested_by_customer'
+        });
+
+        if (refund.status === 'succeeded' || refund.status === 'pending') {
+            const { error: updateError } = await supabase
+                .from('orders')
+                .update({ status: 'REFUNDED' })
+                .eq('id', orderId);
+
+            if (updateError) throw updateError;
+            return { success: true };
+        } else {
+            throw new Error(`Stripe Refund status: ${refund.status}`);
+        }
+
+    } catch (err: any) {
+        console.error("Refund Error:", err);
+        throw new Error(err.message || "Refund failed");
+    }
 }

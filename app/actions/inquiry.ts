@@ -44,9 +44,25 @@ export async function submitInquiry(formData: FormData) {
     }
 
     // 2. Sync to Listmonk (Placeholder)
-    // In production, this would be:
-    // await fetch(process.env.LISTMONK_URL + '/api/subscribers', { ... });
     await syncToListmonk(email, type, metadata);
+
+    // 3. Send Acknowledgment (Async, non-blocking if possible, but we await for Vercel/Serverless safety)
+    try {
+        const { sendTransactionalEmail } = await import('@/lib/email');
+        const emailKey = type === 'newsletter' ? 'newsletter_welcome' : 'contact_acknowledgment';
+
+        await sendTransactionalEmail({
+            key: emailKey,
+            to: email,
+            data: {
+                type: type.toUpperCase(),
+                message_preview: message ? (message.length > 50 ? message.substring(0, 50) + '...' : message) : 'Connected'
+            }
+        });
+    } catch (e) {
+        console.error('[Inquiry] Email Failed:', e);
+        // Do not fail the request, as data is saved.
+    }
 
     return { success: true };
 }
