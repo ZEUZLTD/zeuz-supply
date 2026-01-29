@@ -1,0 +1,62 @@
+﻿
+> zeuz-supply@0.1.0 build
+> next build
+
+  Ôû▓ Next.js 14.2.35
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+ Ô£ô Compiled successfully
+   Skipping linting
+   Checking validity of types ...
+npm : Failed to 
+compile.
+At line:1 char:1
++ npm run build 2>&1 
+| Out-File -Encoding 
+utf8 build_output.txt
++ ~~~~~~~~~~~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: (Failed    
+ to compile.:Stri    
+ng) [], RemoteEx    
+ception
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+
+./lib/email.ts:16:16
+Type error: Cannot 
+find name 
+'SupabaseClient'.
+
+[0m [90m 14 |[39m 
+        
+[36mreturn[39m [36
+mnull[39m[33m;[39m
+[0m
+[0m [90m 15 |[39m 
+    }[0m
+[0m[31m[1m>[22m[
+39m[90m 16 |[39m   
+  [36mreturn[39m 
+[36mnew[39m [33mSu
+pabaseClient[39m(url
+[33m,[39m 
+key)[33m;[39m[0m
+[0m [90m    |[39m 
+               [31m
+[1m^[22m[39m[0m
+[0m [90m 17 |[39m 
+}[33m;[39m[0m
+[0m [90m 18 
+|[39m[0m
+[0m [90m 19 |[39m 
+[36minterface[39m 
+[33mSendEmailParams[
+39m {[0m
+Next.js build worker 
+exited with code: 1 
+and signal: null

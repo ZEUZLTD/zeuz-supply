@@ -1,13 +1,20 @@
 import { Resend } from 'resend';
 import { createClient } from '@supabase/supabase-js';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const getResend = () => {
+    if (!process.env.RESEND_API_KEY) throw new Error('RESEND_API_KEY missing');
+    return new Resend(process.env.RESEND_API_KEY);
+};
 
-// Use Service Role for fetching templates (public or private) to ensure we always get them server-side
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const getSupabase = () => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) {
+        console.warn('Supabase env vars missing in email lib - returning null. OK during build.');
+        return null;
+    }
+    return createClient(url, key);
+};
 
 interface SendEmailParams {
     key: string;
@@ -20,6 +27,9 @@ export async function sendTransactionalEmail({ key, to, data }: SendEmailParams)
 
     try {
         // 1. Fetch Template
+        const supabase = getSupabase();
+        if (!supabase) return { success: false, error: 'Supabase client missing' };
+
         const { data: template, error } = await supabase
             .from('email_templates')
             .select('*')
@@ -44,6 +54,7 @@ export async function sendTransactionalEmail({ key, to, data }: SendEmailParams)
         });
 
         // 3. Send via Resend
+        const resend = getResend();
         const { data: resendData, error: resendError } = await resend.emails.send({
             from: 'Zeuz Supply <orders@zeuz.co.uk>', // Ensure domain is verified or use onboarding@resend.dev
             to: [to],
@@ -68,6 +79,7 @@ export async function sendTransactionalEmail({ key, to, data }: SendEmailParams)
 export async function sendBatchEmail(params: { from?: string, to: string[], subject: string, html: string }) {
     // For Newsletter marketing bursts
     try {
+        const resend = getResend();
         const { data, error } = await resend.emails.send({
             from: params.from || 'Zeuz Supply <newsletter@zeuz.co.uk>',
             to: params.to,

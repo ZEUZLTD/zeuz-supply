@@ -2,22 +2,33 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
 import { Resend } from 'resend';
 
-// Initialize instances here or inject them
-// For a utility file, it's often better to initialize standard ones if environment vars are available.
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-// Resend might not be initialized if key missing in some envs, handle gracefully?
-const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
+// Lazy Init Helpers
+const getStripe = () => {
+    if (!process.env.STRIPE_SECRET_KEY) throw new Error('STRIPE_SECRET_KEY missing');
+    return new Stripe(process.env.STRIPE_SECRET_KEY);
+};
 
-// Initialize Admin Client once
-const supabaseAdmin = new SupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+const getSupabaseAdmin = () => {
+    // During build or missing env, we shouldn't crash unless used
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!url || !key) {
+        console.warn('Supabase env vars missing - returning null client. This is fine during build if not used.');
+        return null;
+    }
+    return new SupabaseClient(url, key);
+};
 
 export async function handleOrderCompletion(session: Stripe.Checkout.Session) {
     console.log(`Processing Order: ${session.id}`);
 
     // Check if order already exists to prevent duplicates (Idempotency)
+    const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) {
+        console.error('Supabase Admin Client not available');
+        return { error: 'Server Configuration Error' };
+    }
     const { data: existingOrder } = await supabaseAdmin
         .from('orders')
         .select('id')
@@ -32,6 +43,7 @@ export async function handleOrderCompletion(session: Stripe.Checkout.Session) {
     if (!session.id) return { error: 'No session ID' };
 
     // Retrieve Line Items
+    const stripe = getStripe();
     const sessionWithItems = await stripe.checkout.sessions.retrieve(session.id, {
         expand: ['line_items']
     });
@@ -115,7 +127,7 @@ export async function handleOrderCompletion(session: Stripe.Checkout.Session) {
 
         // Apology Email
         const email = session.customer_details?.email;
-        if (email && resend) {
+        if (email && process.env.RESEND_API_KEY) {
             const { sendTransactionalEmail } = await import('@/lib/email');
             await sendTransactionalEmail({
                 key: 'stock_apology',
