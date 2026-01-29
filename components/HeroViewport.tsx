@@ -281,7 +281,7 @@ const CameraAdjuster = () => {
 // Preload
 useGLTF.preload("/models/cell.glb");
 
-export const HeroViewport = () => {
+export const HeroViewport = ({ onReady }: { onReady?: () => void }) => {
     return (
         <div className="fixed top-0 left-0 w-full h-[100lvh] -z-10 bg-[var(--color-background)]">
             <Canvas
@@ -291,6 +291,10 @@ export const HeroViewport = () => {
                 gl={{ antialias: true }}
                 eventSource={typeof document !== 'undefined' ? document.body : undefined}
                 eventPrefix="page"
+                onCreated={() => {
+                    // Signal that the 3D scene is ready to be shown
+                    if (onReady) onReady();
+                }}
             >
                 <ambientLight intensity={1} />
                 <pointLight position={[10, 10, 10]} intensity={15} castShadow />

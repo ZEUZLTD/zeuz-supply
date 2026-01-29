@@ -101,7 +101,7 @@ export async function POST(request: Request) {
         }
 
         // Rebuild Line Items using TRUSTED database data
-        let voucherDiscountTotal = 0;
+        const voucherDiscountTotal = 0;
         let usageQuota = voucher ? (voucher.max_usage_per_cart ?? 999999) : 0;
 
         const lineItems = items.map((clientItem: any) => {

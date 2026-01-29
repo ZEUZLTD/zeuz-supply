@@ -12,6 +12,7 @@
     "@radix-ui/react-switch": "^1.2.6",
     "@react-three/drei": "^9.122.0",
     "@react-three/fiber": "^8.18.0",
+    "@react-three/offscreen": "^0.0.8",
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.91.1",
     "@types/three": "^0.182.0",
