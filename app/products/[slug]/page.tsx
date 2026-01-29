@@ -1,4 +1,4 @@
-import { supabaseServer } from "@/lib/supabase-server";
+import { getSupabaseServer } from "@/lib/supabase-server";
 import { InventoryItem, SectionType } from "@/lib/types";
 import { ProductDetailContent } from "@/components/ProductDetailContent";
 import { Metadata, ResolvingMetadata } from "next";
@@ -17,6 +17,7 @@ interface Props {
 // Helper: Fetch Single Product
 async function getProduct(slug: string): Promise<InventoryItem | null> {
     try {
+        const supabaseServer = getSupabaseServer();
         const { data: product, error } = await supabaseServer
             .from('products')
             .select(`

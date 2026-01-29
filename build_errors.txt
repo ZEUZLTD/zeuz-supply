@@ -1,0 +1,110 @@
+﻿
+> zeuz-supply@0.1.0 build
+> next build
+
+  Ôû▓ Next.js 14.2.35
+  - Environments: .env.local
+
+   Creating an optimized production build ...
+npm :  ÔÜá Compiled 
+with warnings
+At line:1 char:1
++ npm run build 2>&1 
+| Out-File -Encoding 
+utf8 build_errors.txt
++ ~~~~~~~~~~~~~~~~~~
+    + CategoryInfo   
+           : NotSpe  
+  cified: ( ÔÜá Co   
+ mpiled with warn    
+ings:String) [],     
+RemoteException
+    + FullyQualified 
+   ErrorId : Native  
+  CommandError
+ 
+
+./app/page.tsx
+Attempted import 
+error: 
+'supabaseServer' is 
+not exported from '@/
+lib/supabase-server' 
+(imported as 
+'supabaseServer').
+
+Import trace for 
+requested module:
+./app/page.tsx
+
+./app/page.tsx
+Attempted import 
+error: 
+'supabaseServer' is 
+not exported from '@/
+lib/supabase-server' 
+(imported as 
+'supabaseServer').
+
+Import trace for 
+requested module:
+./app/page.tsx
+
+./app/products/[slug]
+/page.tsx
+Attempted import 
+error: 
+'supabaseServer' is 
+not exported from '@/
+lib/supabase-server' 
+(imported as 
+'supabaseServer').
+
+Import trace for 
+requested module:
+./app/products/[slug]
+/page.tsx
+
+ Ô£ô Compiled successfully
+   Skipping linting
+   Checking validity of types ...
+Failed to compile.
+
+./app/page.tsx:1:10
+Type error: '"@/lib/s
+upabase-server"' has 
+no exported member 
+named 
+'supabaseServer'. 
+Did you mean 
+'getSupabaseServer'?
+
+[0m[31m[1m>[22m[
+39m[90m 1 |[39m 
+[36mimport[39m { 
+supabaseServer } 
+[36mfrom[39m [32m"
+@/lib/supabase-server
+"[39m[33m;[39m[0m
+[0m [90m   |[39m  
+        [31m[1m^[2
+2m[39m[0m
+[0m [90m 2 |[39m 
+[36mimport[39m { 
+[33mINVENTORY[39m 
+} [36mfrom[39m [32
+m"@/data/inventory"[
+39m[33m;[39m[0m
+[0m [90m 3 |[39m 
+[36mimport[39m fs 
+[36mfrom[39m [32m'
+fs'[39m[33m;[39m[
+0m
+[0m [90m 4 |[39m 
+[36mimport[39m 
+path [36mfrom[39m 
+[32m'path'[39m[33m;
+[39m[0m
+Next.js build worker 
+exited with code: 1 
+and signal: null

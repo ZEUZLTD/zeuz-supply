@@ -4,16 +4,21 @@ import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 
 // Initialize clients (Note: Vercel Cron requests are server-server, so we use Service Key)
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export const dynamic = 'force-dynamic'; // Prevent caching
 
 export async function GET(request: Request) {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.RESEND_API_KEY) {
+        console.error('Cron: Missing Env Vars');
+        return NextResponse.json({ error: 'Config Error' }, { status: 500 });
+    }
+
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+    const resend = new Resend(process.env.RESEND_API_KEY);
     // Vercel Cron Security: Check for CRON_SECRET if you set one, or just allow public triggering (optional but recommended)
     // For now, we'll keep it simple as valid CRON requests come with `Authorization: Bearer <CRON_SECRET>`
     // if configured.

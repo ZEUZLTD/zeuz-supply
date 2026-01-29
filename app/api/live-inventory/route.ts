@@ -1,4 +1,4 @@
-import { supabaseServer } from "@/lib/supabase-server";
+import { getSupabaseServer } from "@/lib/supabase-server";
 import { NextResponse } from "next/server";
 
 export const dynamic = 'force-dynamic'; // Always fetch fresh
@@ -9,6 +9,7 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const ids = searchParams.get('ids')?.split(',');
 
+        const supabaseServer = getSupabaseServer();
         let query = supabaseServer
             .from('products')
             .select(`

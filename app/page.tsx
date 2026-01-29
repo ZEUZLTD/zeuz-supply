@@ -1,4 +1,4 @@
-import { supabaseServer } from "@/lib/supabase-server";
+import { getSupabaseServer } from "@/lib/supabase-server";
 import { INVENTORY } from "@/data/inventory";
 import fs from 'fs';
 import path from 'path';
@@ -48,6 +48,7 @@ interface SupabaseProduct {
 async function getInventory(): Promise<InventoryItem[]> {
   try {
     // 1. Fetch Products
+    const supabaseServer = getSupabaseServer();
     const { data: products, error } = await supabaseServer
       .from('products')
       .select(`
@@ -169,6 +170,7 @@ async function getInventory(): Promise<InventoryItem[]> {
 }
 
 async function getVolumeDiscounts() {
+  const supabaseServer = getSupabaseServer();
   const { data } = await supabaseServer
     .from('volume_discounts')
     .select('min_quantity, discount_percent')
