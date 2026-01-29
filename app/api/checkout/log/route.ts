@@ -5,12 +5,18 @@ import { NextRequest, NextResponse } from 'next/server';
 // Initialize Supabase Admin Client for server-side operations
 // We use the service role key to bypass RLS potentially, though the schema allows anon insert.
 // Using service role is safer for "upsert by email" if RLS restricts viewing others' data.
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+
 
 export async function POST(req: NextRequest) {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        console.error('Missing Supabase Environment Variables');
+        return NextResponse.json({ error: 'Server Configuration Error' }, { status: 500 });
+    }
+
+    const supabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
     try {
         const body = await req.json();
         const { email, items, shipping, session_id } = body;
