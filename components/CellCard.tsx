@@ -13,12 +13,15 @@ import Link from "next/link";
 // Just minimal details + Image
 // Click triggers view
 
-export const CellCard = ({ item }: { item: InventoryItem }) => {
+interface CellCardProps {
+    item: InventoryItem;
+}
+
+export const CellCard = ({ item }: CellCardProps) => {
     const isPrototype = item.category === "PROTOTYPE";
-    // Priority: DB Image -> Validated Local Image -> Default
+    // Priority: DB Image -> Default
     const dbImage = item.images && item.images.length > 0 ? item.images[0] : null;
-    const localImage = item.hasImage !== false ? (item.slug ? `/images/products/${item.slug}/1.png` : null) : null;
-    const initialImage = dbImage || localImage || "/images/defaults/1.png";
+    const initialImage = dbImage || "/images/defaults/1.png";
     const [imgSrc, setImgSrc] = useState(initialImage);
     const isOOS = (item.stock_quantity || 0) <= 0 && !isPrototype;
 

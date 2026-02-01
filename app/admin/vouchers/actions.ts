@@ -73,7 +73,7 @@ export async function createVoucher(formData: FormData) {
 
     const voucher: Partial<Voucher> & { discount_percent?: number; discount_amount?: number } = {
         code,
-        type: type as any,
+        type: type as Voucher['type'],
         active: true,
         used_count: 0,
         min_spend: min_spend || null,
@@ -157,7 +157,7 @@ export async function updateVoucher(id: string, formData: FormData) {
 
     const updates: Partial<Voucher> & { discount_percent?: number; discount_amount?: number } = {
         code,
-        type: type as any,
+        type: type as Voucher['type'],
         min_spend: min_spend || null,
         product_ids,
         max_usage_per_cart,

@@ -122,11 +122,25 @@ npx supabase db push # Syncs Volume Discounts and Cart Tables
 npm run dev
 ```
 
-### **Paranoid Audit**
-To run a full production sanity check:
+### **Gatekeeper Protocol**
+Before deployment, run the full audit:
 ```bash
-npm run build # Validates Typings and 3D Asset Traces
+node scripts/gatekeeper.js
 ```
+
+**The Gatekeeper performs 5 sequential checks:**
+1. **Security Audit** (`npm audit --audit-level=high`) – Flags high/critical vulnerabilities
+2. **Linting** (`npm run lint`) – Advisory check for code quality
+3. **Fast Type Check** (`npx tsc --noEmit`) – Quick TypeScript validation (~5s vs 30s+ for full build)
+4. **Production Build** (`npm run build`) – Full Next.js build with static generation
+5. **Database Reminder** – Manual prompt to run `npx supabase db push` if schema changed
+
+**Exit Criteria**: Deployment requires both `Type Check` and `Build` to pass. Lint is advisory-only.
+
+> [!IMPORTANT]
+> **Security Note**: As of v2.1.0, the `temp_dev_access.sql` "backdoor" policies have been REMOVED.
+> All database operations (Batches, Products, Vouchers) now strictly require Authentication (RBAC).
+> Ensure you are logged in as an Admin to perform write operations.
 
 ### **Documentation**
 - [Email System Architecture](./email_system_guide.md): Details on triggers, templates, and the Industrial Design system.

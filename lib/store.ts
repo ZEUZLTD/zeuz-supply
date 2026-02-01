@@ -11,7 +11,7 @@ export interface CartItem {
     stock?: number;
 }
 
-export type SectionType = 'POWER' | 'ENERGY' | 'PROTOTYPE';
+export type SectionType = 'POWER' | 'ENERGY' | 'PROTOTYPE' | 'HERO';
 
 interface ContactContext {
     productId?: string;

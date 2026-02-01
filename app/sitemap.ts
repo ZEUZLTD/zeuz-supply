@@ -18,7 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ];
 
     // 2. Dynamic Product Routes
-    let products: any[] = [];
+    let products: { slug: string; updated_at?: string }[] = [];
     try {
         const supabase = getSupabaseServer();
         // If build environment lacks keys, getSupabaseServer might throw or return null depending on implementation

@@ -28,7 +28,7 @@ export interface InventoryItem {
     priority: number;
     batch_test_url?: string | null;
     slug?: string;
-    hasImage?: boolean; // Server-side check result
+    // hasImage?: boolean; // REMOVED
     images?: string[];
     batches?: Batch[];
 }

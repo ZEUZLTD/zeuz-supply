@@ -34,7 +34,7 @@ export default async function ProductsListPage() {
                                 const catColor = p.category === 'POWER' ? 'text-red-500' : p.category === 'ENERGY' ? 'text-blue-500' : 'text-gray-400';
 
                                 // Calculate total stock from batches
-                                const totalStock = p.batches?.reduce((acc: number, b: any) => acc + (b.stock_quantity || 0), 0) || 0;
+                                const totalStock = p.batches?.reduce((acc: number, b: { stock_quantity?: number }) => acc + (b.stock_quantity || 0), 0) || 0;
 
                                 return (
                                     <tr key={p.id} className="hover:bg-gray-50 transition-colors">

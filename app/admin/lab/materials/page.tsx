@@ -158,7 +158,7 @@ const mat = new THREE.MeshPhysicalMaterial({
                     <Section label="Environment & Lighting">
                         <select
                             value={params.env}
-                            onChange={(e) => updateParam('env', e.target.value as any)}
+                            onChange={(e) => updateParam('env', e.target.value as TunedCellParams['env'])}
                             className="w-full bg-zinc-900 border border-zinc-800 p-2 text-xs font-mono focus:border-[var(--color-accent-brand)] focus:outline-none"
                         >
                             <option value="studio">Studio (Flat/Neutral)</option>

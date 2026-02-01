@@ -57,7 +57,8 @@ import { useLiveInventory } from "@/hooks/useLiveInventory";
 
 // ... existing imports ...
 
-export const HomeView = ({ inventory: initialInventory, settings = [] }: { inventory: InventoryItem[], settings?: any[] }) => {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const HomeView = ({ inventory: initialInventory, settings = [] }: { inventory: InventoryItem[], settings?: { key: string; value: any }[] }) => {
     // Live Inventory Hook
     const inventory = useLiveInventory(initialInventory);
 
@@ -69,7 +70,7 @@ export const HomeView = ({ inventory: initialInventory, settings = [] }: { inven
     const { setActiveSection: setGlobalActiveSection } = useUIStore();
     useEffect(() => {
         window.scrollTo(0, 0);
-        setGlobalActiveSection('HERO' as any); // Force default at start
+        setGlobalActiveSection('HERO'); // Force default at start
     }, [setGlobalActiveSection]);
 
     // ... imports
@@ -80,7 +81,7 @@ export const HomeView = ({ inventory: initialInventory, settings = [] }: { inven
     const { setActiveSection, activeSection } = useUIStore(); // Need activeSection for frosting
 
     useEffect(() => {
-        if (isHeroInView) setActiveSection('HERO' as any);
+        if (isHeroInView) setActiveSection('HERO');
     }, [isHeroInView, setActiveSection]);
 
     // Reliable Hero Reset on Scroll & Dynamic Frosting
@@ -93,8 +94,8 @@ export const HomeView = ({ inventory: initialInventory, settings = [] }: { inven
             const viewportHeight = window.innerHeight;
 
             // Force HERO state if at very top
-            if (scrollY < 50 && (activeSection as any) !== 'HERO') {
-                setActiveSection('HERO' as any);
+            if (scrollY < 50 && activeSection !== 'HERO') {
+                setActiveSection('HERO');
             }
 
             // Hero Text Opacity (Fade out)
@@ -126,8 +127,10 @@ export const HomeView = ({ inventory: initialInventory, settings = [] }: { inven
             {/* Launch Promo Overlay */}
             {/* Launch Promo Overlay */}
             <LaunchOverlay
-                enabled={settings.find((s: any) => s.key === 'LAUNCH_DISCOUNT_ACTIVE')?.value ?? true}
+                enabled={settings.find((s) => s.key === 'LAUNCH_DISCOUNT_ACTIVE')?.value ?? true}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 title={settings.find((s: any) => s.key === 'LAUNCH_TITLE')?.value}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 subtitle={settings.find((s: any) => s.key === 'LAUNCH_SUBTITLE')?.value}
             />
 

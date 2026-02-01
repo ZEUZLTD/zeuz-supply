@@ -1,6 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
-import { Resend } from 'resend';
 
 // Lazy Init Helpers
 const getStripe = () => {
@@ -193,7 +192,7 @@ export async function handleOrderCompletion(session: Stripe.Checkout.Session) {
     const email = session.customer_details?.email;
     if (email) {
         // Generate Items HTML
-        const itemsHtml = lineItems.map((item: any) => `
+        const itemsHtml = lineItems.map((item: Stripe.LineItem) => `
             <div style="display: table-row; border-bottom: 1px solid #222;">
                 <div style="display: table-cell; padding: 10px 0; font-size: 10px; color: #888; width: 10%;">${item.quantity}x</div>
                 <div style="display: table-cell; padding: 10px 0; font-size: 12px; color: white; font-weight: bold; text-align: left;">${item.description}</div>

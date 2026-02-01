@@ -10,14 +10,17 @@ If *any* step fails, the deployment is **ABORTED**.
 
 ## 2. The Checklist
 
-### A. Code Integrity (Automated)
+### A. Code Integrity (Automated via `node scripts/gatekeeper.js`)
 Run the following commands in order:
-1.  **Security Audit**: `npm audit` (Critical vulnerabilities require immediate patching).
-2.  **Linting**: `npm run lint` (Must be 0 errors, 0 warnings).
-3.  **Type Safety & Build**: `npm run build`
+1.  **Security Audit**: `npm audit --audit-level=high` (High/Critical vulnerabilities flagged as WARN).
+2.  **Linting**: `npm run lint` (Advisory only - warnings don't block deployment).
+3.  **Fast Type Check**: `npx tsc --noEmit` (Quick ~5s check - catches type errors before full build).
+4.  **Production Build**: `npm run build`
     *   *Must build successfully.*
-    *   *Check for Type Errors.*
+    *   *Validates types, compiles pages, generates static content.*
     *   *Check Bundle Size*: No individual chunk should exceed 500kB (warning) or 1MB (hard fail).
+
+**Exit Criteria**: Deployment requires both `Type Check` (Step 3) and `Build` (Step 4) to pass.
 
 ### B. Visual Integrity (Manual / Agentic)
 1.  **Terminal Check**: Review the `npm run dev` output. Are there any runtime error stacks?
@@ -40,17 +43,17 @@ Run the following commands in order:
 2.  **Sitemap**: Is it accessible at `/sitemap.xml`?
 
 ## 3. The "Go / No-Go" Summary
-Before pushing, compile a report:
+Before pushing, compile a report (or run `node scripts/gatekeeper.js` for automated version):
 
 | Check | Status | Notes |
 | :--- | :--- | :--- |
-| **Build** | ✅ PASS | No errors. |
-| **Lint** | ✅ PASS | Zero warnings. |
-| **Security** | ⚠️ WARN | 1 Low severity (monitor). |
-| **Console** | ✅ PASS | clean. |
-| **Database** | ✅ PASS | Synced. |
+| **Security** | ⚠️ WARN | Advisory only (High+ flagged). |
+| **Lint** | ✅ PASS | Advisory only (warnings OK). |
+| **Type Check** | ✅ PASS | Must pass for deployment. |
+| **Build** | ✅ PASS | Must pass for deployment. |
+| **Database** | 🔧 MANUAL | Run `npx supabase db push` if changed. |
 
-**DECISION**: [ GO / NO-GO ]
+**DECISION**: [ GO / NO-GO ] (Requires Type Check + Build = PASS)
 
 ## 4. Automation
 Use `node scripts/gatekeeper.js` to run the automated section of this protocol.

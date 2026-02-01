@@ -138,7 +138,7 @@ export const DischargeGraph = ({ type, products }: DischargeGraphProps) => {
     };
 
     // Custom Tooltip
-    const CustomTooltip = ({ active, payload, label }: any) => {
+    const CustomTooltip = ({ active, label }: { active?: boolean; label?: string | number }) => {
         if (!active) return null;
         const currentCapacity = Number(label);
 

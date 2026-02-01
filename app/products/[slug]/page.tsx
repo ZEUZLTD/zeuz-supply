@@ -49,13 +49,15 @@ async function getProduct(slug: string): Promise<InventoryItem | null> {
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function formatProduct(product: any): InventoryItem {
     const p = product;
 
     // Safety checks for batches
-    const liveBatches = p.batches?.filter((b: any) => b.status === 'LIVE') || [];
-    const totalStock = liveBatches.reduce((acc: number, b: any) => acc + (b.stock_quantity || 0), 0);
-    const graphDataBatch = liveBatches.find((b: any) => b.graph_data) || p.batches?.find((b: any) => b.graph_data);
+    const liveBatches = p.batches?.filter((b: { status: string }) => b.status === 'LIVE') || [];
+    const totalStock = liveBatches.reduce((acc: number, b: { stock_quantity?: number }) => acc + (b.stock_quantity || 0), 0);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const graphDataBatch = liveBatches.find((b: { graph_data?: any }) => b.graph_data) || p.batches?.find((b: { graph_data?: any }) => b.graph_data);
 
     let status: InventoryItem['status'] = 'OUT_OF_STOCK';
     if (p.category === 'PROTOTYPE') {

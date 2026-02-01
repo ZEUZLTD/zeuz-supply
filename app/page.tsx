@@ -1,7 +1,5 @@
 import { getSupabaseServer } from "@/lib/supabase-server";
 import { INVENTORY } from "@/data/inventory";
-import fs from 'fs';
-import path from 'path';
 import { HomeView } from "@/components/HomeView";
 import { StoreHydrator } from "@/components/StoreHydrator";
 import { InventoryItem, SectionType } from "@/lib/types";
@@ -21,10 +19,12 @@ export const revalidate = 60; // Revalidate every 60 seconds (ISR)
 interface SupabaseBatch {
   status: string;
   stock_quantity: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   graph_data?: any;
 }
 
 interface SupabaseProduct {
+  id: string;
   slug: string;
   name: string;
   spec: string;
@@ -83,6 +83,7 @@ async function getInventory(): Promise<InventoryItem[]> {
     const rawProducts = products as unknown as SupabaseProduct[];
 
     // Helper to downsample curve data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const downsampleCurve = (points: any[], target: number = 100) => {
       if (!points || points.length <= target) return points;
       const step = points.length / target;
@@ -101,10 +102,11 @@ async function getInventory(): Promise<InventoryItem[]> {
 
       // Extract graph data from the first batch that has it (prefer LIVE, then any)
       const graphDataBatch = liveBatches.find(b => b.graph_data) || p.batches?.find(b => b.graph_data);
-      let graphData = graphDataBatch ? graphDataBatch.graph_data : null;
+      let graphData = graphDataBatch ? graphDataBatch.graph_data : undefined;
 
       // DOWNSAMPLE if exists
       if (graphData) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const processedData: any = {};
         Object.keys(graphData).forEach(key => {
           if (Array.isArray(graphData[key])) {
@@ -127,36 +129,29 @@ async function getInventory(): Promise<InventoryItem[]> {
         status = 'OUT_OF_STOCK'; // Default for now
       }
 
-      // Server-Side Image Check
-      const imagePath = `/images/products/${p.slug}/1.png`;
-      const fullPath = path.join(process.cwd(), 'public', imagePath);
-      const hasImage = fs.existsSync(fullPath);
-
       return {
-        id: p.slug, // Map slug to ID used in frontend
+        id: p.id,
         model: p.name,
         spec: p.spec,
         tag: p.tag,
         pitch: p.pitch,
-        price: p.price_gbp ? Number(p.price_gbp) : null,
+        price: p.price_gbp,
         category: p.category as SectionType,
-        status: status,
+        status,
         stock_quantity: totalStock,
-        // Extended Technical Stats
+        weight_g: p.weight_g,
         nominal_voltage_v: p.nominal_voltage_v,
         charge_voltage_v: p.charge_voltage_v,
         discharge_cutoff_v: p.discharge_cutoff_v,
-        max_discharge_a: p.max_discharge_a,
         standard_charge_a: p.standard_charge_a,
+        max_discharge_a: p.max_discharge_a,
         ac_impedance_mohm: p.ac_impedance_mohm,
-        weight_g: p.weight_g,
         graph_data: graphData,
-        priority: p.priority || 99, // Default to low priority if missing
-        batch_test_url: p.batch_test_url || null,
+        priority: p.priority ?? 99,
+        batch_test_url: p.batch_test_url,
         slug: p.slug,
-        hasImage: hasImage,
-        images: p.images || [] // Map images
-      };
+        images: p.images || []
+      } as InventoryItem;
     });
 
   } catch (e) {

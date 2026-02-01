@@ -23,9 +23,21 @@ async function getSupabase() {
         return supabase;
     }
 
-    if (!user) throw new Error('Unauthorized');
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (profile?.role !== 'admin') throw new Error('Forbidden');
+    if (!user) {
+        console.log('Admin Action: No User found');
+        throw new Error('Unauthorized');
+    }
+    const { data: profile, error } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+
+    if (error || !profile || profile.role !== 'admin') {
+        console.error('Admin Action: Access Denied', {
+            userId: user.id,
+            profile,
+            role: profile?.role,
+            error
+        });
+        throw new Error('Forbidden');
+    }
 
     return supabase;
 }

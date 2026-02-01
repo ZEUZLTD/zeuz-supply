@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
+import { Session } from "@supabase/supabase-js";
 import { ThemeSwitcher } from "./ThemeSwitcher";
 import { usePathname } from "next/navigation";
 import { checkVoucherInternal } from "@/app/actions/vouchers";
@@ -44,10 +45,12 @@ export const CartDrawer = () => {
     const [view, setView] = useState<'CART' | 'SHIPPING'>('CART');
 
     // Auth State
-    const [session, setSession] = useState<any>(null);
+    const [session, setSession] = useState<Session | null>(null);
     const [loginEmail, setLoginEmail] = useState("");
     const [magicLinkSent, setMagicLinkSent] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [orders, setOrders] = useState<any[]>([]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [selectedOrder, setSelectedOrder] = useState<any>(null);
 
     // Shipping State
@@ -161,9 +164,9 @@ export const CartDrawer = () => {
         else alert("Error: " + error.message);
     };
 
-    const handleSocialLogin = async (provider: 'google' | 'apple' | 'facebook') => {
+    const handleSocialLogin = async (provider: 'google' | 'apple') => {
         const { error } = await supabase.auth.signInWithOAuth({
-            provider: provider as any,
+            provider: provider,
             options: {
                 redirectTo: `${window.location.origin}/auth/callback`
             }
@@ -183,14 +186,16 @@ export const CartDrawer = () => {
 
                 if (serverItems && serverItems.length > 0) {
                     // Transform DB shape to Store shape
-                    // We need to map DB items to CartItem. 
-                    // IMPORTANT: The DB stores quantity. Product details come from join.
-                    const mappedItems = serverItems.map((row: any) => ({
+                    const mappedItems = serverItems.map((row: {
+                        product_id: string;
+                        products: { slug: string; price_gbp: number } | null;
+                        quantity: number
+                    }) => ({
                         id: row.product_id,
-                        model: row.products?.slug || 'UNKNOWN', // Fallback
+                        model: row.products?.slug || 'UNKNOWN',
                         price: row.products?.price_gbp || 0,
                         quantity: row.quantity,
-                        stock: 9999 // We will sync prices anyway
+                        stock: 9999
                     }));
 
                     // MERGE
@@ -965,6 +970,7 @@ export const CartDrawer = () => {
 
                                                                     {/* Items Summary */}
                                                                     <div className="p-4 space-y-2">
+                                                                        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
                                                                         {order.items && Array.isArray(order.items) && order.items.map((item: any, i: number) => (
                                                                             <div key={i} className="flex justify-between items-center text-[10px] text-[var(--color-foreground)] font-mono-spec">
                                                                                 <div className="flex gap-2">

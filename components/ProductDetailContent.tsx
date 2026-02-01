@@ -80,14 +80,6 @@ export const ProductDetailContent = ({ product: initialProduct, isModal = false,
 
     if (product.images && product.images.length > 0) {
         productImages = product.images;
-    } else if (currentSlug) {
-        productImages = [
-            `/images/products/${currentSlug}/1.png`,
-            `/images/products/${currentSlug}/2.png`,
-            `/images/products/${currentSlug}/3.png`,
-            `/images/products/${currentSlug}/4.png`,
-            `/images/products/${currentSlug}/5.png`,
-        ];
     }
 
     const galleryImages = (useDefaultImages || !currentSlug) ? defaultImages : productImages;

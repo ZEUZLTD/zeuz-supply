@@ -6,7 +6,22 @@ import { cn } from "@/lib/utils";
 import { useState } from "react";
 
 interface OrderDetailViewProps {
-    order: any;
+    order: {
+        id: string;
+        created_at: string;
+        status: string;
+        amount_total: number;
+        currency: string;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        items: any[];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        shipping_address?: any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        metadata?: any;
+        tracking_number?: string;
+        carrier?: string;
+        customer_name?: string;
+    };
     onBack: () => void;
 }
 
@@ -48,20 +63,18 @@ export const OrderDetailView = ({ order, onBack }: OrderDetailViewProps) => {
 
     // items is usually Stripe Line Items
     const items = order.items || [];
-    const subtotal = items.reduce((acc: number, item: any) => acc + (item.amount_total || (item.price?.unit_amount * item.quantity) || 0), 0) / 100;
+    const subtotal = items.reduce((acc: number, item: { amount_total: number; price?: { unit_amount: number }; quantity: number }) => acc + (item.amount_total || (item.price?.unit_amount ? item.price.unit_amount * item.quantity : 0) || 0), 0) / 100;
 
     // Try to find shipping cost in items
-    const shippingItem = items.find((i: any) => i.description?.toLowerCase().includes('shipping'));
+    const shippingItem = items.find((i: { description?: string }) => i.description?.toLowerCase().includes('shipping'));
     const shippingCost = shippingItem ? (shippingItem.amount_total / 100) : 0;
 
     // Filter out shipping from items list display
-    const productItems = items.filter((i: any) => !i.description?.toLowerCase().includes('shipping'));
+    const productItems = items.filter((i: { description?: string }) => !i.description?.toLowerCase().includes('shipping'));
 
     // Voucher logic (if saved in metadata)
     const voucherCode = metadata.voucher_code;
-    const volumeSavings = 0; // Hard to recalc without original price data, unless we saved it. 
     // If subtotal (sum of items) > total paid (minus shipping), there is a global discount
-    const impliedDiscount = Math.max(0, (subtotal + shippingCost) - total);
     // Note: Stripe `amount_total` on line item is ALREADY discounted if we changed unit price.
     // So `subtotal` here is the *discounted* subtotal.
     // We can only show "Savings" if we have explicit metadata or original prices.
@@ -141,7 +154,7 @@ export const OrderDetailView = ({ order, onBack }: OrderDetailViewProps) => {
                         <Package size={14} /> MANIFEST ({productItems.length})
                     </h3>
                     <div className="border border-[var(--color-border-main)] bg-[#0A0A0A] divide-y divide-[var(--color-border-main)]">
-                        {productItems.map((item: any, i: number) => (
+                        {productItems.map((item: { quantity: number; description?: string; price?: { product?: { name?: string }; unit_amount?: number }; amount_total: number }, i: number) => (
                             <div key={i} className="p-3 flex justify-between items-center group hover:bg-[var(--color-border-main)]/10 transition-colors">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 bg-white/5 border border-white/10 flex items-center justify-center text-[8px] font-mono-spec font-bold">
@@ -149,7 +162,7 @@ export const OrderDetailView = ({ order, onBack }: OrderDetailViewProps) => {
                                     </div>
                                     <div>
                                         <p className="font-mono-spec text-xs font-bold text-[var(--color-foreground)]">{item.description || item.price?.product?.name || 'UNKNOWN ITEM'}</p>
-                                        <p className="font-mono-spec text-[9px] opacity-50">UNIT: £{((item.price?.unit_amount || item.amount_total / item.quantity) / 100).toFixed(2)}</p>
+                                        <p className="font-mono-spec text-[9px] opacity-50">UNIT: £{((item.price?.unit_amount || (item.quantity > 0 ? item.amount_total / item.quantity : 0)) / 100).toFixed(2)}</p>
                                     </div>
                                 </div>
                                 <div className="font-mono-spec text-xs font-bold">
