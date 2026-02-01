@@ -19,8 +19,10 @@ Run the following commands in order:
     *   *Must build successfully.*
     *   *Validates types, compiles pages, generates static content.*
     *   *Check Bundle Size*: No individual chunk should exceed 500kB (warning) or 1MB (hard fail).
+5.  **Runtime & Visual Verification**: (Interactive)
+    *   *Must confirm local dev integrity (Homepage, Admin, Terminal).*
 
-**Exit Criteria**: Deployment requires both `Type Check` (Step 3) and `Build` (Step 4) to pass.
+**Exit Criteria**: Deployment requires `Type Check` (Step 3), `Build` (Step 4), and `Runtime Verification` (Step 5) to pass.
 
 ### B. Visual Integrity (Manual / Agentic)
 1.  **Terminal Check**: Review the `npm run dev` output. Are there any runtime error stacks?
@@ -51,9 +53,10 @@ Before pushing, compile a report (or run `node scripts/gatekeeper.js` for automa
 | **Lint** | ✅ PASS | Advisory only (warnings OK). |
 | **Type Check** | ✅ PASS | Must pass for deployment. |
 | **Build** | ✅ PASS | Must pass for deployment. |
+| **Runtime Check** | ✅ PASS | Must pass for deployment. |
 | **Database** | 🔧 MANUAL | Run `npx supabase db push` if changed. |
 
-**DECISION**: [ GO / NO-GO ] (Requires Type Check + Build = PASS)
+**DECISION**: [ GO / NO-GO ] (Requires Type Check + Build + Runtime = PASS)
 
 ## 4. Automation
 Use `node scripts/gatekeeper.js` to run the automated section of this protocol.

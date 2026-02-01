@@ -128,14 +128,15 @@ Before deployment, run the full audit:
 node scripts/gatekeeper.js
 ```
 
-**The Gatekeeper performs 5 sequential checks:**
+**The Gatekeeper performs 6 sequential checks:**
 1. **Security Audit** (`npm audit --audit-level=high`) – Flags high/critical vulnerabilities
 2. **Linting** (`npm run lint`) – Advisory check for code quality
-3. **Fast Type Check** (`npx tsc --noEmit`) – Quick TypeScript validation (~5s vs 30s+ for full build)
-4. **Production Build** (`npm run build`) – Full Next.js build with static generation
-5. **Database Reminder** – Manual prompt to run `npx supabase db push` if schema changed
+3. **Fast Type Check** (`npx tsc --noEmit`) – Quick TypeScript validation
+4. **Production Build** (`npm run build`) – Full Next.js build
+5. **Runtime & Visual Verification** – Manual confirmation of local dev integrity (Homepage, Admin, Terminal)
+6. **Database Reminder** – Manual prompt to run `npx supabase db push`
 
-**Exit Criteria**: Deployment requires both `Type Check` and `Build` to pass. Lint is advisory-only.
+**Exit Criteria**: Deployment requires `Type Check`, `Build`, and `Runtime Verification` to pass. Lint is advisory-only.
 
 > [!IMPORTANT]
 > **Security Note**: As of v2.1.0, the `temp_dev_access.sql` "backdoor" policies have been REMOVED.

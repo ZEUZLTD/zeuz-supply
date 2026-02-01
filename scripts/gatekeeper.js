@@ -61,6 +61,7 @@ async function gatekeeper() {
         lint: false,
         types: false,
         build: false,
+        runtime: false,
         db: false
     };
 
@@ -99,13 +100,38 @@ async function gatekeeper() {
     // We expect this to take the longest
     report.build = runCommand('npm run build', 'next build');
 
-    // 4. Database Sync Check
+    // 5. Runtime & Visual Verification
+    log(`\n5. RUNTIME & VISUAL VERIFICATION`, 'bold');
+    log(`[Required Manual Check] Please verify the following in a dev environment (npm run dev):`, 'yellow');
+    log(`  - Homepage: http://localhost:3000/ (Check for Hydration Errors & 3D rendering)`, 'reset');
+    log(`  - Admin: http://localhost:3000/admin (Check for Dashboard access & data)`, 'reset');
+    log(`  - Terminal: Verify no severe error stacks are appearing in the console`, 'reset');
+    const readline = require('readline').createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+    const askConfirmation = () => {
+        return new Promise((resolve) => {
+            readline.question(`\nHave you verified the runtime integrity? (y/n): `, (answer) => {
+                readline.close();
+                resolve(answer.toLowerCase() === 'y');
+            });
+        });
+    };
+    report.runtime = await askConfirmation();
+    if (report.runtime) {
+        log('[Success] Runtime Verification Confirmed', 'green');
+    } else {
+        log('[Failed] Runtime Verification Rejected', 'red');
+    }
+
+    // 6. Database Sync Check
     // This doesn't actually push, it just checks if there are pending migrations 
     // or if the schema is out of sync. 
     // NOTE: 'db push' is interactive, so we can't fully automate it safely 
     // without potentially modifying the DB. 
     // Instead we will just remind the user.
-    log(`\n5. CHECKING DATABASE`, 'bold');
+    log(`\n6. CHECKING DATABASE`, 'bold');
     log(`[Manual Action Required] Please verify database sync status manually if you have made schema changes:`, 'yellow');
     log(`> npx supabase db push`, 'reset');
     report.db = true; // Assumed true for the script flow, relies on manual confirmation.
@@ -122,10 +148,11 @@ async function gatekeeper() {
         'Linting': { Status: report.lint ? 'PASS' : 'WARN' },
         'Type Check': { Status: report.types ? 'PASS' : 'FAIL' },
         'Build & Types': { Status: report.build ? 'PASS' : 'FAIL' },
+        'Runtime Check': { Status: report.runtime ? 'PASS' : 'FAIL' },
         'Database': { Status: 'MANUAL CHECK' }
     });
 
-    if (report.types && report.build) {
+    if (report.types && report.build && report.runtime) {
         log(`\n✅ READY FOR DEPLOYMENT`, 'green');
         process.exit(0);
     } else {
