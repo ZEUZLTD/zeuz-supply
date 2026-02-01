@@ -35,6 +35,27 @@ async function gatekeeper() {
     ========================================
     `, 'bold');
 
+    // 0. Cleanup - Remove debug logs from previous runs
+    log(`\n0. CLEANUP (removing debug logs)`, 'bold');
+    const logsToClean = [
+        'build_error*.log', 'build_success*.log', 'error.log',
+        'eslint_*.*', 'lint_*.*'
+    ];
+    logsToClean.forEach(pattern => {
+        try {
+            const glob = require('path').join(process.cwd(), pattern.replace('*', '**/*'));
+            // Simple glob-free cleanup using fs
+            const files = fs.readdirSync(process.cwd()).filter(f => {
+                const base = pattern.replace('*.*', '').replace('*.', '').replace('*', '');
+                return f.startsWith(base) && (f.endsWith('.log') || f.endsWith('.txt') || f.endsWith('.json'));
+            });
+            files.forEach(f => {
+                try { fs.unlinkSync(f); } catch (e) { /* ignore */ }
+            });
+        } catch (e) { /* ignore */ }
+    });
+    log('[Done] Cleanup complete', 'green');
+
     const report = {
         security: false,
         lint: false,
