@@ -544,6 +544,7 @@ export const ProductDetailContent = ({ product: initialProduct, isModal = false,
                                         addItem({
                                             id: product.id,
                                             model: product.model,
+                                            slug: product.slug,
                                             price: product.price!,
                                             stock: product.stock_quantity
                                         }, qtyNum);

@@ -126,7 +126,9 @@ export const CartDrawer = () => {
 
     const fetchTheme = async (userId: string) => {
         const { data } = await supabase.from('profiles').select('theme_color, role').eq('id', userId).single();
-        data && setIsAdminUser(data.role === 'admin');
+        if (data) {
+            setIsAdminUser(data.role === 'admin');
+        }
         if (data && data.theme_color) {
             setThemeColor(data.theme_color);
         }
@@ -441,7 +443,8 @@ export const CartDrawer = () => {
                     // Let's assume we match `id` or `model` (case insensitive)
                     const match = appliedVoucher.product_ids.some(pid =>
                         pid.toLowerCase() === item.id.toLowerCase() ||
-                        pid.toLowerCase() === item.model.toLowerCase()
+                        pid.toLowerCase() === item.model.toLowerCase() ||
+                        (item.slug && pid.toLowerCase() === item.slug.toLowerCase())
                     );
                     if (!match) return; // Skip this item
                 }

@@ -6,6 +6,7 @@ import { VolumeTier } from './types';
 export interface CartItem {
     id: string;
     model: string;
+    slug?: string;
     price: number;
     quantity: number;
     stock?: number;
@@ -95,7 +96,7 @@ export const useCartStore = create<CartStore>()(
                 if (existingItem) {
                     const newQty = Math.min(existingItem.quantity + qty, stockLimit);
                     const updatedItems = currentItems.map((i) =>
-                        i.id === item.id ? { ...i, quantity: newQty } : i
+                        i.id === item.id ? { ...i, quantity: newQty, slug: item.slug || i.slug } : i
                     );
                     set({ items: updatedItems, isOpen: true, activeTab: 'cart' });
                 } else {
@@ -195,11 +196,18 @@ export const useCartStore = create<CartStore>()(
                 serverItems.forEach(sItem => {
                     const existing = mergedMap.get(sItem.id);
                     if (existing) {
-                        // Conflict: Sum quantities
-                        // Respect stock limit if we had it, otherwise just sum
-                        const limit = existing.stock || 9999;
-                        const newQty = Math.min(existing.quantity + sItem.quantity, limit);
-                        mergedMap.set(sItem.id, { ...existing, quantity: newQty });
+                        // IDEMPOTENCY FIX: 
+                        // If quantity is already the same, do nothing.
+                        // If different, we might be merging a guest cart into a user cart, 
+                        // but since we sync local->server, the local state usually wins 
+                        // unless the server has more (e.g. from another device).
+                        // Safe bet for refresh: Use the maximum quantity to satisfy both.
+                        const newQty = Math.max(existing.quantity, sItem.quantity);
+                        mergedMap.set(sItem.id, {
+                            ...existing,
+                            quantity: newQty,
+                            slug: sItem.slug || existing.slug
+                        });
                     } else {
                         mergedMap.set(sItem.id, sItem);
                     }

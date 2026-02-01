@@ -16,11 +16,11 @@ export const StoreHydrator = ({ inventory, volumeTiers = [] }: { inventory: Inve
                 items: state.items.map(cartItem => {
                     const freshItem = inventory.find(i => i.id === cartItem.id);
                     if (freshItem) {
-                        // Update price and stock silently
                         return {
                             ...cartItem,
                             price: freshItem.price || cartItem.price,
-                            stock: freshItem.stock_quantity ?? cartItem.stock
+                            stock: freshItem.stock_quantity ?? cartItem.stock,
+                            slug: freshItem.slug || cartItem.slug
                         };
                     }
                     return cartItem;
