@@ -5,7 +5,11 @@ import { Voucher } from "@/lib/types";
 
 // Safe initialization for build environment where keys might be missing
 const stripe = process.env.STRIPE_SECRET_KEY
-    ? new Stripe(process.env.STRIPE_SECRET_KEY)
+    ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+        apiVersion: '2025-01-27.acacia', // Updated to current stable version
+        maxNetworkRetries: 3,           // Built-in retries for connection issues
+        timeout: 20000,                  // 20s timeout for slow server-to-server calls
+    } as any)
     : null as unknown as Stripe;
 
 export async function POST(request: Request) {
@@ -356,35 +360,50 @@ export async function POST(request: Request) {
             console.error("Checkout capture exception:", err);
         }
 
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            line_items: lineItems,
-            mode: 'payment',
-            customer_email: email,
-            success_url: `${process.env.NEXT_PUBLIC_URL}/?success=true&session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: `${process.env.NEXT_PUBLIC_URL}/`,
-            // REDUNDANCY FIX:
-            // Since we collect address on our frontend, we disable Stripe's collection
-            // but pass the data to Stripe so it's recorded correctly on the Payment Intent.
-            payment_intent_data: {
-                shipping: {
-                    name: String(shipping.name || 'Anonymous'),
-                    address: {
-                        line1: String(shipping.line1 || ''),
-                        line2: String(shipping.line2 || ''),
-                        city: String(shipping.city || ''),
-                        postal_code: String(shipping.postal_code || ''),
-                        country: 'GB'
+        // --- STRIPE SESSION CREATION ---
+        console.log(`[CHECKOUT] Creating Stripe session for ${email} (${lineItems.length} items)`);
+
+        let session;
+        try {
+            session = await stripe.checkout.sessions.create({
+                payment_method_types: ['card'],
+                line_items: lineItems,
+                mode: 'payment',
+                customer_email: email,
+                success_url: `${process.env.NEXT_PUBLIC_URL}/?success=true&session_id={CHECKOUT_SESSION_ID}`,
+                cancel_url: `${process.env.NEXT_PUBLIC_URL}/`,
+                // REDUNDANCY FIX:
+                // Since we collect address on our frontend, we disable Stripe's collection
+                // but pass the data to Stripe so it's recorded correctly on the Payment Intent.
+                payment_intent_data: {
+                    shipping: {
+                        name: String(shipping.name || 'Anonymous'),
+                        address: {
+                            line1: String(shipping.line1 || ''),
+                            line2: String(shipping.line2 || ''),
+                            city: String(shipping.city || ''),
+                            postal_code: String(shipping.postal_code || ''),
+                            country: 'GB'
+                        }
                     }
+                },
+                metadata: {
+                    source: 'zeuz_v1',
+                    shipping_details: JSON.stringify(shipping),
+                    voucher_code: voucher ? voucher.code : null,
+                    checkout_id: checkoutId // Link back to our DB
                 }
-            },
-            metadata: {
-                source: 'zeuz_v1',
-                shipping_details: JSON.stringify(shipping),
-                voucher_code: voucher ? voucher.code : null,
-                checkout_id: checkoutId // Link back to our DB
-            }
-        });
+            });
+        } catch (sErr: any) {
+            console.error("[STRIPE SESSION ERROR]", {
+                message: sErr.message,
+                type: sErr.type,
+                code: sErr.code,
+                param: sErr.param,
+                requestId: sErr.requestId
+            });
+            throw sErr; // Re-throw to be caught by global catch
+        }
 
         // Update Checkout with Session ID
         if (checkoutId) {

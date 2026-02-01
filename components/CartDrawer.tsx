@@ -374,10 +374,12 @@ export const CartDrawer = () => {
             const [, response] = await Promise.all([
                 fetch('/api/checkout/log', {
                     method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(checkoutPayload)
                 }).catch(e => console.error("Log failed", e)), // Don't block if log fails
                 fetch('/api/checkout', {
                     method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(checkoutPayload),
                 })
             ]);
