@@ -1,0 +1,47 @@
+{
+    "framework": {
+        "name": "Next.js",
+        "version": "14.2.35"
+    },
+    "runtime": "Node.js",
+    "language": "TypeScript",
+    "styling": {
+        "engine": "Tailwind CSS",
+        "version": "4.0.0",
+        "libraries": [
+            "clsx",
+            "tailwind-merge",
+            "class-variance-authority"
+        ]
+    },
+    "state_management": {
+        "global": "Zustand",
+        "server": "Supabase SSR"
+    },
+    "database": {
+        "provider": "Supabase",
+        "client": "@supabase/supabase-js",
+        "features": [
+            "Auth",
+            "Realtime",
+            "Storage",
+            "Postgres Functions"
+        ]
+    },
+    "visuals": {
+        "3d_engine": "Three.js (R3F)",
+        "animations": "Framer Motion",
+        "charts": "Recharts"
+    },
+    "infrastructure": {
+        "hosting": "Vercel",
+        "cdn": "Vercel Blob / Supabase Storage",
+        "payments": "Stripe"
+    },
+    "commands": {
+        "dev": "npm run dev",
+        "build": "npm run build",
+        "lint": "next lint",
+        "db_push": "npx supabase db push"
+    }
+}

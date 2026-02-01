@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, ShoppingBag, BarChart3, Tag, Settings, LogOut, Megaphone } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, BarChart3, Tag, LogOut, Megaphone, Target } from "lucide-react";
 
 export default function AdminNav() {
     const pathname = usePathname();
@@ -15,6 +15,7 @@ export default function AdminNav() {
         { href: '/admin/products', label: 'Products', icon: Tag },
         { href: '/admin/vouchers', label: 'Vouchers', icon: Tag }, // Using Tag for now
         { href: '/admin/marketing', label: 'Marketing', icon: Megaphone },
+        { href: '/admin/strategy', label: 'Strategy', icon: Target },
     ];
 
     return (
@@ -22,7 +23,7 @@ export default function AdminNav() {
             <div className="max-w-7xl mx-auto px-4 h-full flex items-center justify-between">
                 <div className="flex items-center gap-8">
                     <Link href="/admin" className="font-black tracking-tighter text-xl">
-                        ZEUZ <span className="text-gray-500">// CONTROL</span>
+                        ZEUZ <span className="text-gray-500">{"// CONTROL"}</span>
                     </Link>
 
                     <div className="hidden md:flex items-center gap-1">

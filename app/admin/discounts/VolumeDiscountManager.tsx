@@ -29,7 +29,7 @@ export function VolumeDiscountManager() {
 
     const fetchTiers = async () => {
         setLoading(true);
-        const { data, error } = await supabase
+        const { data } = await supabase
             .from('volume_discounts')
             .select('*')
             .order('min_quantity', { ascending: true });

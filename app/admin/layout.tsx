@@ -1,6 +1,6 @@
 
 import { Metadata } from 'next';
-import Link from 'next/link';
+
 import AdminNav from './admin-nav';
 
 export const dynamic = 'force-dynamic';

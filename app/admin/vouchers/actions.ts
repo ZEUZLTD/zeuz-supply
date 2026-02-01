@@ -61,13 +61,19 @@ export async function createVoucher(formData: FormData) {
     const start_date = (formData.get('start_date') as string) || null;
     const expiry_date = (formData.get('expiry_date') as string) || null;
     const is_free_shipping = formData.get('is_free_shipping') === 'on';
+    const is_first_order_only = formData.get('is_first_order_only') === 'on';
+
+    const allowedEmailsRaw = formData.get('allowed_emails') as string;
+    const allowed_emails = allowedEmailsRaw
+        ? allowedEmailsRaw.split(/[\n,]/).map(e => e.trim()).filter(e => e.length > 0)
+        : null;
 
     // Validation
     if (!code || isNaN(value)) throw new Error('Invalid code or value');
 
-    const voucher: any = {
+    const voucher: Partial<Voucher> & { discount_percent?: number; discount_amount?: number } = {
         code,
-        type,
+        type: type as any,
         active: true,
         used_count: 0,
         min_spend: min_spend || null,
@@ -78,7 +84,9 @@ export async function createVoucher(formData: FormData) {
         start_date: start_date ? new Date(start_date).toISOString() : new Date().toISOString(),
         // Default Expiry: Null (Never) if empty
         expiry_date: expiry_date ? new Date(expiry_date).toISOString() : null,
-        is_free_shipping
+        is_free_shipping,
+        is_first_order_only,
+        allowed_emails
     };
 
     if (type === 'PERCENT') voucher.discount_percent = value;
@@ -140,17 +148,25 @@ export async function updateVoucher(id: string, formData: FormData) {
     const start_date = (formData.get('start_date') as string) || null;
     const expiry_date = (formData.get('expiry_date') as string) || null;
     const is_free_shipping = formData.get('is_free_shipping') === 'on';
+    const is_first_order_only = formData.get('is_first_order_only') === 'on';
 
-    const updates: any = {
+    const allowedEmailsRaw = formData.get('allowed_emails') as string;
+    const allowed_emails = allowedEmailsRaw
+        ? allowedEmailsRaw.split(/[\n,]/).map(e => e.trim()).filter(e => e.length > 0)
+        : null;
+
+    const updates: Partial<Voucher> & { discount_percent?: number; discount_amount?: number } = {
         code,
-        type,
+        type: type as any,
         min_spend: min_spend || null,
         product_ids,
         max_usage_per_cart,
         max_global_uses,
         start_date: start_date ? new Date(start_date).toISOString() : null,
         expiry_date: expiry_date ? new Date(expiry_date).toISOString() : null,
-        is_free_shipping
+        is_free_shipping,
+        is_first_order_only,
+        allowed_emails
     };
 
     if (type === 'PERCENT') {

@@ -23,8 +23,9 @@ export async function GET(request: Request) {
 
         const result = await handleOrderCompletion(session);
         return NextResponse.json(result);
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error("Confirm Order Error:", e);
-        return NextResponse.json({ error: e.message || "Confirmation failed" }, { status: 500 });
+        const message = e instanceof Error ? e.message : "Confirmation failed";
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

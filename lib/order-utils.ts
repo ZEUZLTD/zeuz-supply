@@ -192,6 +192,18 @@ export async function handleOrderCompletion(session: Stripe.Checkout.Session) {
     // Send Receipt Email
     const email = session.customer_details?.email;
     if (email) {
+        // Generate Items HTML
+        const itemsHtml = lineItems.map((item: any) => `
+            <div style="display: table-row; border-bottom: 1px solid #222;">
+                <div style="display: table-cell; padding: 10px 0; font-size: 10px; color: #888; width: 10%;">${item.quantity}x</div>
+                <div style="display: table-cell; padding: 10px 0; font-size: 12px; color: white; font-weight: bold; text-align: left;">${item.description}</div>
+                <div style="display: table-cell; padding: 10px 0; font-size: 12px; color: white; text-align: right; width: 20%;">${((item.amount_total || 0) / 100).toFixed(2)}</div>
+            </div>
+        `).join('') || '<div style="color: #666; font-size: 10px; padding: 10px;">No items listed</div>';
+
+        const wrapperHtml = `<div style="display: table; width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 20px;">${itemsHtml}</div>`;
+        const orderLink = `${process.env.NEXT_PUBLIC_BASE_URL}/?order_id=${session.id}`;
+
         const { sendTransactionalEmail } = await import('@/lib/email');
         await sendTransactionalEmail({
             key: 'order_confirmation',
@@ -199,7 +211,9 @@ export async function handleOrderCompletion(session: Stripe.Checkout.Session) {
             data: {
                 order_id: session.id,
                 total: (session.amount_total || 0) / 100,
-                currency: session.currency?.toUpperCase()
+                currency: session.currency?.toUpperCase(),
+                items_html: wrapperHtml,
+                order_link: orderLink
             }
         });
     }

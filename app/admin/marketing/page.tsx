@@ -5,7 +5,7 @@ import { getSettings, updateSetting } from './actions';
 export default async function MarketingPage() {
     const settings = await getSettings();
     const showSplash = settings.find((s: { key: string }) => s.key === 'SHOW_SPLASH')?.value ?? true;
-    const splashMessage = settings.find((s: { key: string, value: any }) => s.key === 'SPLASH_MESSAGE')?.value || '';
+    const splashMessage = settings.find((s: { key: string, value: string }) => s.key === 'SPLASH_MESSAGE')?.value || '';
     const launchDiscount = settings.find((s: { key: string }) => s.key === 'LAUNCH_DISCOUNT_ACTIVE')?.value ?? true;
     const launchTitle = settings.find((s: { key: string }) => s.key === 'LAUNCH_TITLE')?.value || '';
     const launchSubtitle = settings.find((s: { key: string }) => s.key === 'LAUNCH_SUBTITLE')?.value || '';
@@ -65,7 +65,7 @@ export default async function MarketingPage() {
                         await updateSetting('LAUNCH_DISCOUNT_ACTIVE', !launchDiscount);
                     }}>
                         <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-500">Show the "20% OFF FIRST 100 ORDERS" banner.</span>
+                            <span className="text-sm text-gray-500">Show the &quot;20% OFF FIRST 100 ORDERS&quot; banner.</span>
                             <button className={`px-4 py-2 font-bold text-sm uppercase transition-colors ${launchDiscount ? 'bg-green-500 text-white' : 'bg-gray-200 text-black'}`}>
                                 {launchDiscount ? 'ACTIVE' : 'DISABLED'}
                             </button>

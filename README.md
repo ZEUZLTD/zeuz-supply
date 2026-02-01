@@ -1,16 +1,23 @@
 # ZEUZ_SUPPLY // 21700 ENERGY INFRASTRUCTURE
 
 **Version**: 2.1.0 (Advanced Performance Refactor)
-**Stack**: Next.js 14, Supabase (RT), Stripe Terminal/API, Framer Motion, Three.js (R3F)
+**Agent System**: [Active - See .agent/README.md](.agent/README.md)
+
+---
+
+## 🤖 AI AGENT NOTICE
+**Are you an LLM/Agent working on this repo?**
+> **STOP.** Read [.agent/README.md](.agent/README.md) **IMMEDIATELY.**
+> It contains the "Brain" of the project: Tech Stack, Design System, & Business Logic.
 
 ---
 
 ## 1. THE ZEUZ PHILOSOPHY: INDUSTRIAL HIGH-FIDELITY
 
-ZEUZ_SUPPLY is not a storefront. It is a **technical protocol** for the distribution of high-discharge Lithium-Ion modules. 
+ZEUZ_SUPPLY is not a storefront. It is a **technical protocol** for the distribution of high-discharge Lithium-Ion modules.
 
 ### **Design Language: Teenage.Engineering x Brutalism**
-The platform's aesthetic is heavily influenced by the "Functional-Industrial" school of design, specifically the precision of **teenage.engineering**. 
+The platform's aesthetic is heavily influenced by the "Functional-Industrial" school of design, specifically the precision of **teenage.engineering**.
 
 *   **Tactile Feedback**: Every interaction—from the scroll-reactive 3D cell in the `HeroViewport` to the layout shifts—is designed to feel like operating a piece of high-end lab equipment.
 *   **Typography as Specs**: We use **JetBrains Mono** for all data-sensitive text. The UI doesn't just display information; it presents it as a technical manifest.
@@ -66,6 +73,7 @@ The `/admin` dashboard provides direct manipulation of the ZEUZ ecosystem.
 -   **Dashboard Intelligence**: Advanced sales visualization engine with dynamic date navigation (Day, Week, Month, Year, Financial Year, Custom Range) and a focused "Order Fulfillment" summary to track paid, shipped, and completed orders efficiently.
 -   **Commerce Security**: Implemented **Geographic Checkout Locking** on Stripe sessions to prevent shipping rate exploitation. By enforcing "GB-only" shipping address collection at the payment gateway, we ensure that the shipping fees calculated on the frontend match the final delivery destination.
 -   **Promotion Analytics**: New financial reporting layer that isolates "Promotional Spend." A dedicated view tracks the financial impact of Volume Discounts vs. Voucher Codes, giving precise visibility into margin reduction from marketing activities.
+-   **Loyalty & Identity Protocol**: Integrated account-locked voucher system. Automates 15% reward assignment on order completion, restricted by a strict `allowed_emails` matrix and "First Order Only" initiation checks to prevent promotional leakage.
 
 ### **Tactical Communication Matrix**
 ZEUZ now operates a dedicated "Signal Intelligence" layer for automated user communications (`zeuz.supply` / `zeuz.co.uk`).
@@ -92,6 +100,8 @@ To bring ZEUZ to the next level of "Industrial Excellence," the following update
 -   [ ] **Batch Traceability**: Allow customers to see the specific production date and internal testing logs for the batch their cells belong to.
 
 ### **Long-Term (Logistics)**
+- **Analytics**: Real-time sales data, conversion metrics, and revenue tracking.
+- **Strategy Engine**: Built-in business strategy documentation and pricing models for AI agents (`/admin/strategy`).
 -   [ ] **Real-time DPD Integration**: Live shipping tracking embedded directly in the `IDENTITY` tab of the Cart Manifest.
 -   [ ] **The "Z-Hub"**: A customer portal for managing large-scale infrastructure projects and historical power usage data.
 
@@ -117,6 +127,9 @@ To run a full production sanity check:
 ```bash
 npm run build # Validates Typings and 3D Asset Traces
 ```
+
+### **Documentation**
+- [Email System Architecture](./email_system_guide.md): Details on triggers, templates, and the Industrial Design system.
 
 ---
 *ZEUZ_SUPPLY - THE INFRASTRUCTURE OF POWER.*

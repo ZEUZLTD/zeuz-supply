@@ -33,6 +33,7 @@ interface SupabaseProduct {
   price_gbp: number | null;
   category: string;
   batches: SupabaseBatch[];
+  images: string[] | null; // Added images field
   // Extended Technical Stats
   nominal_voltage_v?: number;
   charge_voltage_v?: number;
@@ -153,7 +154,8 @@ async function getInventory(): Promise<InventoryItem[]> {
         priority: p.priority || 99, // Default to low priority if missing
         batch_test_url: p.batch_test_url || null,
         slug: p.slug,
-        hasImage: hasImage
+        hasImage: hasImage,
+        images: p.images || [] // Map images
       };
     });
 

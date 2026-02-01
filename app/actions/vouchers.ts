@@ -15,7 +15,7 @@ export type VoucherResult = {
     type: string | null;
     voucher_code: string | null;
     min_spend: number | null;
-    product_ids: any | null; // using any for JSONB
+    product_ids: string[] | null; // using string[] for JSONB
     max_usage_per_cart: number | null;
     is_free_shipping: boolean | null;
     value: number | null;

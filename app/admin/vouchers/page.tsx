@@ -1,6 +1,6 @@
-import { getVouchers, createVoucher } from './actions';
+import { getVouchers } from './actions';
 import { getProducts } from '../products/product-actions';
-import { Voucher } from '@/lib/types';
+import { Voucher, InventoryItem } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -9,8 +9,8 @@ export default async function VouchersPage({ searchParams = {} }: { searchParams
     console.log("[ADMIN] VouchersPage Render Initiated");
 
     // Defensive fetching
-    let vouchers: any[] = [];
-    let products: any[] = [];
+    let vouchers: Voucher[] = [];
+    let products: InventoryItem[] = [];
 
     try {
         vouchers = (await getVouchers()) || [];
@@ -50,7 +50,7 @@ export default async function VouchersPage({ searchParams = {} }: { searchParams
                         } else {
                             await createVoucher(fd);
                         }
-                    } catch (e: any) {
+                    } catch (e: unknown) {
                         console.error("[ADMIN] Form Action Error:", e);
                         throw e;
                     }
@@ -113,7 +113,7 @@ export default async function VouchersPage({ searchParams = {} }: { searchParams
                             <div>
                                 <label className="block text-xs font-bold uppercase mb-2 text-black">Applies to Products</label>
                                 <div className="border border-gray-200 bg-gray-50 p-4 max-h-48 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-2">
-                                    {safeProducts.map((p: any) => p && (
+                                    {safeProducts.map((p) => p && (
                                         <div key={p?.id || Math.random().toString()} className="flex items-center gap-2">
                                             <input
                                                 type="checkbox"
@@ -124,7 +124,7 @@ export default async function VouchersPage({ searchParams = {} }: { searchParams
                                                 className="w-4 h-4 accent-black"
                                             />
                                             <label htmlFor={`prod-${p?.id}`} className="text-xs font-mono truncate cursor-pointer hover:text-black text-gray-600 select-none">
-                                                {p?.name} <span className="text-gray-400 opacity-50">({p?.category})</span>
+                                                {p?.model} <span className="text-gray-400 opacity-50">({p?.category})</span>
                                             </label>
                                         </div>
                                     ))}
@@ -189,6 +189,34 @@ export default async function VouchersPage({ searchParams = {} }: { searchParams
                         </div>
                     </div>
 
+                    {/* Loyalty Protocols */}
+                    <div className="border-t border-dashed pt-4 border-gray-200">
+                        <h3 className="text-xs font-bold uppercase mb-4 text-gray-500">Loyalty Protocols</h3>
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2">
+                                <input
+                                    name="is_first_order_only"
+                                    type="checkbox"
+                                    defaultChecked={editingVoucher?.is_first_order_only}
+                                    id="foo"
+                                    className="w-4 h-4 accent-black"
+                                />
+                                <label htmlFor="foo" className="text-xs font-bold uppercase text-black cursor-pointer">Start Sequence (First Order Only)</label>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold uppercase mb-2 text-black">Identity Lock (Allowed Emails)</label>
+                                <textarea
+                                    name="allowed_emails"
+                                    defaultValue={Array.isArray(editingVoucher?.allowed_emails) ? editingVoucher.allowed_emails.join('\n') : ''}
+                                    placeholder="user@example.com&#10;admin@zeuz.co.uk"
+                                    className="w-full bg-gray-50 border p-3 font-mono text-xs text-black h-24"
+                                />
+                                <p className="text-[10px] text-gray-400 mt-1">Enter one email per line. Leave empty for public access.</p>
+                            </div>
+                        </div>
+                    </div>
+
                     <button type="submit" className="bg-black text-white px-8 py-3 font-bold uppercase hover:bg-amber-500 hover:text-black transition-colors w-full">
                         {editingVoucher ? 'Update Voucher' : 'Create Voucher'}
                     </button>
@@ -226,7 +254,7 @@ export default async function VouchersPage({ searchParams = {} }: { searchParams
                                     <div className="font-bold">
                                         {v?.type === 'PERCENT' ? `${v?.discount_percent}%` : `£${v?.discount_amount}`}
                                     </div>
-                                    {v?.min_spend! > 0 && <div className="text-[10px] text-gray-400 uppercase pt-1">Min: £{v?.min_spend}</div>}
+                                    {(v?.min_spend || 0) > 0 && <div className="text-[10px] text-gray-400 uppercase pt-1">Min: £{v?.min_spend}</div>}
                                 </td>
                                 <td className="p-4 border-b border-gray-50">
                                     <span className={`px-2 py-1 rounded-full text-[10px] font-bold ${v?.active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
@@ -245,7 +273,7 @@ export default async function VouchersPage({ searchParams = {} }: { searchParams
                                                 {v?.product_ids.length} PRODUCT(S)
                                             </div>
                                         )}
-                                        {v?.max_usage_per_cart! > 0 && <div className="text-gray-500 uppercase">MAX {v?.max_usage_per_cart} PER CART</div>}
+                                        {(v?.max_usage_per_cart || 0) > 0 && <div className="text-gray-500 uppercase">MAX {v?.max_usage_per_cart} PER CART</div>}
 
                                         <div className="text-gray-400 pt-2 border-t border-gray-100">
                                             {v?.start_date ? new Date(v?.start_date).toLocaleDateString() : 'NOW'}

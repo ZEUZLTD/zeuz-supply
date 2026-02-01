@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useCartStore, useUIStore } from "@/lib/store";
+import { useUIStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { InventoryItem } from "@/lib/types";
@@ -15,8 +15,10 @@ import Link from "next/link";
 
 export const CellCard = ({ item }: { item: InventoryItem }) => {
     const isPrototype = item.category === "PROTOTYPE";
-    // Smart default: If server says no image, start with default to prevent 404
-    const initialImage = item.hasImage !== false ? (item.slug ? `/images/products/${item.slug}/1.png` : "/images/defaults/1.png") : "/images/defaults/1.png";
+    // Priority: DB Image -> Validated Local Image -> Default
+    const dbImage = item.images && item.images.length > 0 ? item.images[0] : null;
+    const localImage = item.hasImage !== false ? (item.slug ? `/images/products/${item.slug}/1.png` : null) : null;
+    const initialImage = dbImage || localImage || "/images/defaults/1.png";
     const [imgSrc, setImgSrc] = useState(initialImage);
     const isOOS = (item.stock_quantity || 0) <= 0 && !isPrototype;
 

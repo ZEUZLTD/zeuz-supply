@@ -90,6 +90,9 @@ export const DischargeGraph = ({ type, products }: DischargeGraphProps) => {
         : (graphData && graphData.currents.length > 0 ? graphData.currents[1] || graphData.currents[0] : 10);
 
     const [current, setCurrent] = useState(initialCurrent);
+    // Toggles for visible cells (Default all true)
+    const [hiddenCells, setHiddenCells] = useState<Record<string, boolean>>({});
+    const [showRaw, setShowRaw] = useState(false);
 
     if (!graphData) return (
         <div className="flex items-center justify-center w-full h-full text-zinc-400 font-mono-spec text-xs">
@@ -98,10 +101,6 @@ export const DischargeGraph = ({ type, products }: DischargeGraphProps) => {
     );
 
     const allCells = graphData.cells;
-
-    // Toggles for visible cells (Default all true)
-    const [hiddenCells, setHiddenCells] = useState<Record<string, boolean>>({});
-    const [showRaw, setShowRaw] = useState(false);
 
     const isVisible = (cell: string) => !hiddenCells[cell];
 

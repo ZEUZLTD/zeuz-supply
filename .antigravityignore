@@ -1,0 +1,15 @@
+node_modules/
+.git/
+dist/
+build/
+.next/
+package-lock.json
+yarn.lock
+**/*.min.js
+.vercel/
+.env*
+*.log
+*.tsbuildinfo
+report-*.json
+_legacy/
+*.pptx

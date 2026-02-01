@@ -1,9 +1,9 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { getStartEndDates, adjustDate, TimeframeMode } from '@/lib/date-utils';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export default function DashboardControls() {
     const router = useRouter();

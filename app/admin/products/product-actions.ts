@@ -3,7 +3,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-import { InventoryItem } from '@/lib/types';
+
 
 // Helper to get authenticated Admin Client
 async function getSupabase() {
@@ -43,7 +43,7 @@ export async function getProducts() {
     if (error) throw error;
 
     // Map 'name' to 'model' and 'price_gbp' to 'price' for frontend compatibility
-    return data.map((p: any) => ({
+    return data.map((p) => ({
         ...p,
         model: p.name, // Map DB 'name' to 'model'
         price: p.price_gbp, // Map DB 'price_gbp' to 'price'
@@ -86,10 +86,7 @@ export async function upsertProduct(formData: FormData) {
             max_discharge_a: parseFloat((formData.get('max_discharge_a') as string) || '0'),
             weight_g: parseFloat((formData.get('weight_g') as string) || '0'),
             priority: parseInt((formData.get('priority') as string) || '99'),
-            // images handled separately or via array if DB supports it. 
-            // Assuming 'images' column exists and is text[].
-            // images: formData.getAll('images') as string[], // REMOVING POTENTIAL BAD COLUMN
-            // images: formData.getAll('images') as string[], // REMOVING POTENTIAL BAD COLUMN
+            images: formData.getAll('images') as string[],
         };
 
         console.log('[DEBUG] upsertProduct: Payload prepared', product.slug);
@@ -124,7 +121,7 @@ export async function upsertProduct(formData: FormData) {
         console.log('[DEBUG] upsertProduct: Success. Revalidating...');
         revalidatePath('/admin/products');
         revalidatePath(`/products/${product.slug}`); // Update public page
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error('[DEBUG] upsertProduct: EXCEPTION:', e);
         throw e;
     }

@@ -17,7 +17,7 @@ export default function DevLoginPage() {
                 <h1 className="text-2xl font-bold font-mono text-red-500">DEV OVERRIDE</h1>
                 <p className="text-xs text-gray-400 font-mono">
                     Bypassing Authentication for Audit.<br />
-                    Ensure 'temp_dev_access.sql' is run first.
+                    Ensure &apos;temp_dev_access.sql&apos; is run first.
                 </p>
                 <button
                     onClick={enableDevMode}

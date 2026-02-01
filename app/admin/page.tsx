@@ -99,7 +99,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: {
                         {recentOrders.length === 0 ? (
                             <div className="text-center py-8 text-gray-400 italic text-sm">No orders yet.</div>
                         ) : (
-                            recentOrders.map((order: any) => (
+                            recentOrders.map((order) => (
                                 <Link key={order.id} href={`/admin/orders/${order.id}`} className="block group">
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-gray-50 border border-gray-100 gap-2 group-hover:border-amber-200 group-hover:bg-amber-50 transition-colors">
                                         <div className="flex justify-between w-full sm:w-auto sm:block">

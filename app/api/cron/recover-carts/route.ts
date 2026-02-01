@@ -95,8 +95,9 @@ export async function GET(request: Request) {
         }
 
         return NextResponse.json({ success: true, processed });
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Cron Error:", err);
-        return NextResponse.json({ error: err.message }, { status: 500 });
+        const message = err instanceof Error ? err.message : "Internal Server Error";
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

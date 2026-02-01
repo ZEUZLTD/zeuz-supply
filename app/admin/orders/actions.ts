@@ -153,7 +153,7 @@ export async function getOrder(id: string) {
 export async function updateOrderStatus(id: string, status: string, tracking?: string, carrier?: string) {
     const supabase = await getSupabase();
 
-    const updateData: any = { status };
+    const updateData: { status: string; tracking_number?: string; carrier?: string } = { status };
     if (tracking) updateData.tracking_number = tracking;
     if (carrier) updateData.carrier = carrier;
 
@@ -165,12 +165,28 @@ export async function updateOrderStatus(id: string, status: string, tracking?: s
     if (error) throw error;
 
     // Send Email if Shipped
+    // Send Email if Shipped
     if (status === 'SHIPPED') {
         try {
             // Need customer email
             const { data: order } = await supabase.from('orders').select('customer_email').eq('id', id).single();
 
             if (order?.customer_email) {
+                // Fetch Items for Manifest
+                // The 'items' column is JSONB, so we cast it (user updated typing)
+                const { data: fullOrder } = await supabase.from('orders').select('items').eq('id', id).single();
+                const items = (fullOrder?.items as { quantity: number; description: string }[]) || [];
+
+                const itemsHtml = items.map((item) => `
+                    <div style="display: table-row; border-bottom: 1px solid #222;">
+                        <div style="display: table-cell; padding: 10px 0; font-size: 10px; color: #888; width: 10%;">${item.quantity}x</div>
+                        <div style="display: table-cell; padding: 10px 0; font-size: 12px; color: white; font-weight: bold; text-align: left;">${item.description}</div>
+                    </div>
+                `).join('') || '<div style="color: #666; font-size: 10px; padding: 10px;">No items listed</div>';
+
+                const wrapperHtml = `<div style="display: table; width: 100%; border-collapse: collapse; margin-top: 20px; margin-bottom: 20px;">${itemsHtml}</div>`;
+                const orderLink = `${process.env.NEXT_PUBLIC_BASE_URL}/?order_id=${id}`;
+
                 const { sendTransactionalEmail } = await import('@/lib/email');
                 await sendTransactionalEmail({
                     key: 'order_shipped',
@@ -178,13 +194,62 @@ export async function updateOrderStatus(id: string, status: string, tracking?: s
                     data: {
                         order_id: id,
                         tracking_number: tracking || 'PENDING',
-                        carrier: carrier || 'COURIER'
+                        carrier: carrier || 'COURIER',
+                        items_html: wrapperHtml,
+                        order_link: orderLink
                     }
                 });
             }
         } catch (e) {
             console.error('Failed to send shipment email:', e);
             // Don't fail the update
+        }
+    }
+
+    // LOYALTY PROTOCOL: Send 'order_delivered' and assign reward on COMPLETION
+    if (status === 'COMPLETED') {
+        try {
+            // 1. Get Customer Email
+            const { data: order } = await supabase.from('orders').select('customer_email').eq('id', id).single();
+            if (order?.customer_email) {
+                const email = order.customer_email;
+                const rewardCode = 'PROTOCOL_REWARD'; // Hardcoded master voucher
+
+                // 2. Add to Allowlist (Idempotent check via SQL array functions is hard via JS client alone without Race cond. 
+                // But for this scale, Read -> Modify -> Write is acceptable, or unique array append via RPC if existed).
+                // We will do Read -> Check -> Write.
+
+                const { data: voucher } = await supabase
+                    .from('vouchers')
+                    .select('allowed_emails')
+                    .eq('code', rewardCode)
+                    .single();
+
+                if (voucher) {
+                    const currentList = voucher.allowed_emails || [];
+                    if (!currentList.includes(email)) {
+                        const newList = [...currentList, email];
+                        await supabase
+                            .from('vouchers')
+                            .update({ allowed_emails: newList })
+                            .eq('code', rewardCode);
+                    }
+                }
+
+                // 3. Send 'order_delivered' Email
+                const { sendTransactionalEmail } = await import('@/lib/email');
+                await sendTransactionalEmail({
+                    key: 'order_delivered',
+                    to: email,
+                    data: {
+                        order_id: id,
+                        voucher_code: rewardCode
+                    }
+                });
+            }
+
+        } catch (e) {
+            console.error('Failed to process Loyalty Protocol:', e);
         }
     }
 
@@ -246,8 +311,8 @@ export async function refundOrder(orderId: string) {
             throw new Error(`Stripe Refund status: ${refund.status}`);
         }
 
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Refund Error:", err);
-        throw new Error(err.message || "Refund failed");
+        throw new Error(err instanceof Error ? err.message : "Refund failed");
     }
 }

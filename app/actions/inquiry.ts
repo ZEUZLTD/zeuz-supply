@@ -44,7 +44,7 @@ export async function submitInquiry(formData: FormData) {
     }
 
     // 2. Sync to Listmonk (Placeholder)
-    await syncToListmonk(email, type, metadata);
+    await syncToListmonk(email, type);
 
     // 3. Send Acknowledgment (Async, non-blocking if possible, but we await for Vercel/Serverless safety)
     try {
@@ -67,7 +67,7 @@ export async function submitInquiry(formData: FormData) {
     return { success: true };
 }
 
-async function syncToListmonk(email: string, type: string, data: any) {
+async function syncToListmonk(email: string, type: string) {
     // Placeholder Logic
     console.log(`[Listmonk Sync] Syncing ${email} to list...`);
 

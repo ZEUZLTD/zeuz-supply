@@ -16,6 +16,19 @@ async function getSupabase() {
     return supabase;
 }
 
+type OrderItem = {
+    price?: {
+        product_data?: {
+            metadata?: {
+                original_unit_amount?: number;
+                discount_desc?: string;
+            };
+        };
+    };
+    quantity: number;
+    amount_total: number;
+};
+
 export async function getDiscountAnalytics(from?: string, to?: string) {
     const supabase = await getSupabase();
 
@@ -36,12 +49,12 @@ export async function getDiscountAnalytics(from?: string, to?: string) {
 
     orders.forEach(order => {
         const items = order.items || [];
-        const orderMetadata = order.metadata || {};
-        const voucherCode = orderMetadata.voucher_code; // If global voucher used
 
-        let orderDiscountTotal = 0;
 
-        items.forEach((item: any) => {
+
+
+
+        items.forEach((item: OrderItem) => {
             const price = item.price || {};
             const meta = price.product_data?.metadata || {};
             const originalUnit = meta.original_unit_amount;
@@ -53,7 +66,6 @@ export async function getDiscountAnalytics(from?: string, to?: string) {
                 const discountPerUnit = originalUnit - paidUnit;
                 const totalItemDiscount = discountPerUnit * item.quantity;
 
-                orderDiscountTotal += totalItemDiscount;
                 totalDiscountValue += totalItemDiscount;
 
                 // Attribute to Source
@@ -71,7 +83,7 @@ export async function getDiscountAnalytics(from?: string, to?: string) {
         // Current logic: We labeled per-item "discount_desc".
         // Let's iterate items again to aggregate by specific code found in desc
 
-        items.forEach((item: any) => {
+        items.forEach((item: OrderItem) => {
             const price = item.price || {};
             const meta = price.product_data?.metadata || {};
             const originalUnit = meta.original_unit_amount;

@@ -1,13 +1,25 @@
 "use client";
 
 import { Canvas, useFrame } from "@react-three/fiber";
-import { Environment, Float, useGLTF, Text, OrbitControls, ContactShadows } from "@react-three/drei";
+import { Environment, Float, useGLTF, OrbitControls, ContactShadows } from "@react-three/drei";
 import React, { useRef, useLayoutEffect, useMemo, useState, useEffect } from "react";
 import * as THREE from "three";
 
 // The Tunable Cell
+type TunedCellParams = {
+    roughness: number;
+    metalness: number;
+    bumpScale: number;
+    bumpFreq: number;
+    envMapIntensity: number;
+    reflectivity: number;
+    sheen: number;
+    env: 'studio' | 'apartment' | 'city' | 'park';
+    autoRotate: boolean;
+};
+
 const TunedCell = ({ params, bumpTexture }: {
-    params: any,
+    params: TunedCellParams,
     bumpTexture: THREE.Texture | null
 }) => {
     const { scene } = useGLTF("/models/cell.glb");
@@ -116,7 +128,7 @@ export default function MaterialTunerPage() {
         setBumpTexture(tex);
     }, [params.bumpFreq]);
 
-    const updateParam = (key: keyof typeof params, val: any) => {
+    const updateParam = (key: keyof TunedCellParams, val: TunedCellParams[keyof TunedCellParams]) => {
         setParams(prev => ({ ...prev, [key]: val }));
     };
 
@@ -146,7 +158,7 @@ const mat = new THREE.MeshPhysicalMaterial({
                     <Section label="Environment & Lighting">
                         <select
                             value={params.env}
-                            onChange={(e) => updateParam('env', e.target.value)}
+                            onChange={(e) => updateParam('env', e.target.value as any)}
                             className="w-full bg-zinc-900 border border-zinc-800 p-2 text-xs font-mono focus:border-[var(--color-accent-brand)] focus:outline-none"
                         >
                             <option value="studio">Studio (Flat/Neutral)</option>

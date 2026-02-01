@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { CartItem } from '@/lib/store';
+import { Voucher } from "@/lib/types";
+
 
 // Safe initialization for build environment where keys might be missing
 const stripe = process.env.STRIPE_SECRET_KEY
@@ -28,7 +29,7 @@ export async function POST(request: Request) {
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_KEY!;
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-        const ids = items.map((i: any) => i.id);
+        const ids = items.map((i: { id: string }) => i.id);
 
         // Split IDs into UUIDs and Slugs to prevent DB crashes
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -50,8 +51,8 @@ export async function POST(request: Request) {
         }
 
         const results = await Promise.all(productPromises);
-        let products: any[] = [];
-        let dbError: any = null;
+        let products: Array<{ id: string; price_gbp: number; name: string; slug: string }> = [];
+        let dbError: { message: string } | null = null;
 
         results.forEach(res => {
             if (res.data) products = [...products, ...res.data];
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
 
         if (dbError || products.length === 0) {
             console.error("Database Error or No Products Found", dbError);
-            return NextResponse.json({ error: `Price Verification Failed: ${dbError?.message || 'Product Not Found'}` }, { status: 500 });
+            return NextResponse.json({ error: `Price Verification Failed: ${(dbError as any)?.message || 'Product Not Found'}` }, { status: 500 });
         }
 
         // --- FETCH ACTIVE VOLUME DISCOUNTS ---
@@ -74,7 +75,7 @@ export async function POST(request: Request) {
             .order('min_quantity', { ascending: true });
 
         // --- VOUCHER VALIDATION ---
-        let voucher: any = null;
+        let voucher: Voucher | null = null;
         if (voucherCode) {
             const { data: vData } = await supabase
                 .from('vouchers')
@@ -86,25 +87,54 @@ export async function POST(request: Request) {
                 // Validate Active / Expiry
                 const now = new Date();
                 const isExpired = (vData.expires_at && now > new Date(vData.expires_at)) ||
-                    (vData.expiration_date && now > new Date(vData.expiration_date)); // Handle legacy/alt naming
+                    (vData.expiration_date && now > new Date(vData.expiration_date));
 
                 const isUsageLimitReached = vData.max_global_uses && (vData.used_count || 0) >= vData.max_global_uses;
 
+                // 1. Check Allowlist (Identity Protocol)
+                let isIdentityAuthorized = true;
+                if (vData.allowed_emails && Array.isArray(vData.allowed_emails) && vData.allowed_emails.length > 0) {
+                    // Strict case-insensitive check
+                    const userEmail = email.toLowerCase();
+                    const allowedList = vData.allowed_emails.map((e: string) => e.toLowerCase());
+                    if (!allowedList.includes(userEmail)) {
+                        isIdentityAuthorized = false;
+                    }
+                }
+
+                if (!isIdentityAuthorized) {
+                    return NextResponse.json({ error: "Identity not authorized for this protocol." }, { status: 403 });
+                }
+
+                // 2. Check First Order Only (Initiation Protocol)
+                if (vData.is_first_order_only) {
+                    // Check strict 'PAID', 'SHIPPED', 'COMPLETED' count
+                    const { count } = await supabase
+                        .from('orders')
+                        .select('id', { count: 'exact', head: true })
+                        .eq('customer_email', email)
+                        .in('status', ['PAID', 'SHIPPED', 'COMPLETED']); // Only count successful orders, not open/failed
+
+                    if (count !== null && count > 0) {
+                        return NextResponse.json({ error: "Protocol valid for initiation sequence only." }, { status: 403 });
+                    }
+                }
+
                 if (vData.active && !isExpired && !isUsageLimitReached) {
                     voucher = vData;
-                    // Compatibility: Derive 'value' if not present (logic from vouchers.ts)
-                    if (voucher.value === undefined || voucher.value === null) {
-                        voucher.value = voucher.type === 'PERCENT' ? voucher.discount_percent : voucher.discount_amount;
+                    // Compatibility: Derive 'value' if not present
+                    if ((voucher as any).value === undefined || (voucher as any).value === null) {
+                        (voucher as any).value = voucher!.type === 'PERCENT' ? voucher!.discount_percent : voucher!.discount_amount;
                     }
                 }
             }
         }
 
         // Rebuild Line Items using TRUSTED database data
-        const voucherDiscountTotal = 0;
+
         let usageQuota = voucher ? (voucher.max_usage_per_cart ?? 999999) : 0;
 
-        const lineItems = items.map((clientItem: any) => {
+        const lineItems = items.map((clientItem: { id: string; quantity: number; model?: string }) => {
             const dbProduct = products.find(p => p.id === clientItem.id || p.slug === clientItem.id);
             if (!dbProduct) {
                 // Determine if we should fail or skip. Failing is safer.
@@ -122,8 +152,8 @@ export async function POST(request: Request) {
                 // Find highest matching tier
                 // sort descending just in case DB sort failed
                 const activeTier = volumeTiers
-                    .sort((a: any, b: any) => b.min_quantity - a.min_quantity)
-                    .find((t: any) => q >= t.min_quantity);
+                    .sort((a, b) => b.min_quantity - a.min_quantity)
+                    .find((t) => q >= t.min_quantity);
 
                 if (activeTier) {
                     volDiscount = activeTier.discount_percent / 100;
@@ -146,11 +176,11 @@ export async function POST(request: Request) {
                     const qtyToDiscount = Math.min(clientItem.quantity, usageQuota);
                     if (qtyToDiscount > 0) {
                         let itemSavings = 0;
-                        const vType = voucher.type || (voucher.discount_percent > 0 ? 'PERCENT' : 'FIXED');
+                        const vType = voucher.type || ((voucher.discount_percent || 0) > 0 ? 'PERCENT' : 'FIXED');
 
                         if (vType === 'FIXED_PRICE') {
-                            if (finalPrice > (voucher.value || 0)) {
-                                itemSavings = (finalPrice - (voucher.value || 0)); // Per unit savings
+                            if (finalPrice > ((voucher as any).value || 0)) {
+                                itemSavings = (finalPrice - ((voucher as any).value || 0)); // Per unit savings
                             }
                         } else if (vType === 'PERCENT') {
                             itemSavings = finalPrice * ((voucher.discount_percent || 0) / 100);
@@ -224,8 +254,8 @@ export async function POST(request: Request) {
 
         // Voucher Fixed Global Discount (e.g. £10 off total)
         let globalDiscountAmount = 0;
-        if (voucher && (voucher.type === 'FIXED' || (!voucher.type && voucher.discount_amount > 0))) {
-            globalDiscountAmount = voucher.discount_amount || voucher.value || 0;
+        if (voucher && (voucher.type === 'FIXED' || (!voucher.type && (voucher.discount_amount || 0) > 0))) {
+            globalDiscountAmount = voucher.discount_amount || (voucher as any).value || 0;
         }
 
         // Add Shipping Line Item
@@ -268,8 +298,9 @@ export async function POST(request: Request) {
             const discountCents = Math.round(globalDiscountAmount * 100);
 
             if (totalCents > 0) {
-                let remainingDiscount = discountCents;
 
+
+                let remainingDiscount = discountCents;
                 lineItems.forEach((item: any) => {
                     const itemTotal = item.price_data.unit_amount * item.quantity;
                     const proportion = itemTotal / totalCents;
@@ -338,8 +369,9 @@ export async function POST(request: Request) {
         }
 
         return NextResponse.json({ url: session.url });
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Stripe/Checkout Error:", error);
-        return NextResponse.json({ error: error.message || "Internal Server Error" }, { status: 500 });
+        const message = error instanceof Error ? error.message : "Internal Server Error";
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

@@ -3,13 +3,16 @@
 import { useState } from 'react';
 import { InventoryItem } from '@/lib/types';
 import { upsertProduct } from '@/app/admin/products/product-actions';
-import { useRouter } from 'next/navigation';
+
+import Image from 'next/image';
 import ImageUploader from './image-uploader';
+import GraphDataModal from '@/app/admin/components/GraphDataModal';
 
 export default function ProductForm({ product }: { product?: InventoryItem | null }) {
     const [loading, setLoading] = useState(false);
     const [images, setImages] = useState<string[]>(product?.images || []);
     const [editingBatchId, setEditingBatchId] = useState<string | null>(null);
+    const [selectedBatchForGraph, setSelectedBatchForGraph] = useState<{ id: string, code: string, hasData: boolean } | null>(null);
 
     // ... existing submit logic ...
 
@@ -127,7 +130,23 @@ export default function ProductForm({ product }: { product?: InventoryItem | nul
             </div>
 
             <div className="bg-white p-8 border border-gray-200 shadow-sm">
-                <h2 className="text-xl font-bold mb-6 border-b pb-2">Images</h2>
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b pb-2 gap-4">
+                    <h2 className="text-xl font-bold">Images</h2>
+                    <div className="flex gap-2 items-center bg-gray-50 p-2 rounded border border-gray-100">
+                        <span className="text-[10px] font-bold uppercase text-gray-400 mr-2">Reference Order:</span>
+                        {[1, 2, 3, 4, 5].map((num) => (
+                            <div key={num} className="relative w-8 h-8 border border-gray-200 bg-white" title={`Ref Image ${num}`}>
+                                <Image
+                                    src={`/images/defaults/${num}.png`}
+                                    alt={`Ref ${num}`}
+                                    fill
+                                    className="object-contain p-1"
+                                />
+                                <div className="absolute -bottom-2 -right-2 bg-black text-white text-[8px] w-3 h-3 flex items-center justify-center rounded-full font-mono">{num}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
                 <ImageUploader
                     value={images}
                     onChange={setImages}
@@ -189,7 +208,7 @@ export default function ProductForm({ product }: { product?: InventoryItem | nul
                                             ) : (
                                                 <div className="space-y-1">
                                                     {batch.supplier_reference && <div>Ref: {batch.supplier_reference}</div>}
-                                                    {batch.received_date && <div>Date: {new Date(batch.received_date).toLocaleDateString()}</div>}
+                                                    {batch.received_date && <div>Date: {new Date(batch.received_date).toLocaleDateString('en-GB')}</div>}
                                                 </div>
                                             )}
                                         </td>
@@ -239,6 +258,13 @@ export default function ProductForm({ product }: { product?: InventoryItem | nul
                                                 <>
                                                     {batch.status === 'LIVE' && (
                                                         <>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setSelectedBatchForGraph({ id: batch.id, code: batch.batch_code, hasData: !!batch.graph_data })}
+                                                                className="text-purple-600 hover:underline text-xs mr-2 font-bold"
+                                                            >
+                                                                GRAPH_CSV
+                                                            </button>
                                                             <button
                                                                 type="button"
                                                                 onClick={() => setEditingBatchId(batch.id)}
@@ -323,6 +349,18 @@ export default function ProductForm({ product }: { product?: InventoryItem | nul
                     {loading ? 'Saving...' : 'Save Product'}
                 </button>
             </div>
+
+            {selectedBatchForGraph && (
+                <GraphDataModal
+                    batchId={selectedBatchForGraph.id}
+                    batchCode={selectedBatchForGraph.code}
+                    hasGraphData={selectedBatchForGraph.hasData}
+                    onClose={() => setSelectedBatchForGraph(null)}
+                    onSuccess={() => {
+                        window.location.reload();
+                    }}
+                />
+            )}
         </form>
     );
 }

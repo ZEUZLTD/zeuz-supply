@@ -1,8 +1,8 @@
 "use client";
 
 import { useCartStore, useUIStore } from "@/lib/store";
-import { X, Trash2, ArrowRight, Minus, Plus, ShoppingBag, Truck, CreditCard, ChevronRight, Check, Eraser, User, Package, ChevronLeft } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { X, Trash2, ArrowRight, Minus, Plus, ChevronRight, Eraser, User, ChevronLeft, Check, Package, Truck } from "lucide-react";
+import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/lib/supabase";
@@ -364,7 +364,7 @@ export const CartDrawer = () => {
                 voucherCode: appliedVoucher?.code
             };
 
-            const [logRes, response] = await Promise.all([
+            const [, response] = await Promise.all([
                 fetch('/api/checkout/log', {
                     method: 'POST',
                     body: JSON.stringify(checkoutPayload)
@@ -401,7 +401,7 @@ export const CartDrawer = () => {
 
     if (appliedVoucher) {
         // Re-validate dynamically on render (in case cart changed)
-        const currentQty = items.reduce((acc, i) => acc + i.quantity, 0);
+        // const currentQty = items.reduce((acc, i) => acc + i.quantity, 0);
         let isValid = true; // Assume valid unless rule broken
 
         // Global Constraints

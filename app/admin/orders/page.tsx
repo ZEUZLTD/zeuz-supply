@@ -1,4 +1,4 @@
-import { getRecentOrders, getOrderKPIs } from './actions';
+import { getRecentOrders } from './actions';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Package, Truck, CheckCircle, AlertCircle, Search } from 'lucide-react';
@@ -6,7 +6,7 @@ import { Package, Truck, CheckCircle, AlertCircle, Search } from 'lucide-react';
 export default async function OrdersPage() {
     // For now, fetching recent 50. In real world, use pagination query.
     const orders = await getRecentOrders(50);
-    const kpis = await getOrderKPIs(); // Re-use for simple counts if needed or calculate specific status counts
+
 
     // Calculate Status Counts for "At A Glance"
     // Note: getRecentOrders might be limited, so these stats might be partial if not fetching all.
@@ -103,8 +103,8 @@ export default async function OrdersPage() {
                                 <td className="p-4">
                                     <div className="font-bold text-xs truncate max-w-[200px]">{order.customer_email}</div>
                                     <div className="text-[10px] text-gray-400 uppercase truncate max-w-[200px]">
-                                        {order.shipping_address ? (order.shipping_address as any).city : ''}
-                                        {order.shipping_address ? ', ' + (order.shipping_address as any).country : ''}
+                                        {order.shipping_address ? order.shipping_address.city : ''}
+                                        {order.shipping_address ? ', ' + order.shipping_address.country : ''}
                                     </div>
                                 </td>
                                 <td className="p-4 text-center text-xs text-gray-500">

@@ -5,6 +5,14 @@ import EmailPreviewDialog from '@/components/admin/EmailPreviewDialog';
 
 export const dynamic = 'force-dynamic';
 
+type EmailTemplate = {
+    id: string;
+    key: string;
+    subject: string;
+    body_html: string;
+    updated_at: string;
+};
+
 export default async function EmailTemplatesPage() {
     const templates = await getTemplates();
 
@@ -45,7 +53,7 @@ export default async function EmailTemplatesPage() {
                                 </td>
                             </tr>
                         ) : (
-                            templates.map((t: any) => (
+                            templates.map((t: EmailTemplate) => (
                                 <tr key={t.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="p-4 font-bold">{t.key}</td>
                                     <td className="p-4">{t.subject}</td>

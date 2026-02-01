@@ -1,0 +1,57 @@
+{
+    "meta": {
+        "name": "ZEUZ Industrial High-Fidelity",
+        "vibe": "Teenage Engineering x Brutalism",
+        "philosophy": "Functional-Industrial. The UI is a piece of high-end lab equipment."
+    },
+    "colors": {
+        "void": {
+            "value": "#050505",
+            "variable": "--color-background",
+            "description": "Deepest black, used for main backgrounds."
+        },
+        "foreground": {
+            "value": "#E5E5E5",
+            "variable": "--color-foreground",
+            "description": "High-contrast text color."
+        },
+        "accents": {
+            "power": {
+                "value": "#FF3300",
+                "variable": "--color-accent-power",
+                "usage": "POWER phase / High Discharge"
+            },
+            "energy": {
+                "value": "#00FF99",
+                "variable": "--color-accent-energy",
+                "usage": "ENERGY phase / High Capacity"
+            },
+            "prototype": {
+                "value": "#404040",
+                "variable": "--color-accent-prototype",
+                "usage": "PROTOTYPE phase / Unreleased"
+            }
+        }
+    },
+    "typography": {
+        "sans": {
+            "family": "Inter Tight",
+            "variable": "--font-inter-tight",
+            "usage": "Headings, Body Copy"
+        },
+        "mono": {
+            "family": "JetBrains Mono",
+            "variable": "font-mono-spec",
+            "usage": "Technical Data, Specs, Pricing, Graphs"
+        }
+    },
+    "layout": {
+        "grid": "Modular blocks with strict borders (#333333).",
+        "radius": "0px or minimal (Sharp edges).",
+        "borders": "1px solid var(--color-border-main)"
+    },
+    "assets": {
+        "location": "/public/images/products/[slug]/",
+        "format": "WEBP / PNG"
+    }
+}

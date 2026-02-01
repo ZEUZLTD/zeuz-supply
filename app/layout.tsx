@@ -81,8 +81,8 @@ export default async function RootLayout({
         <Navbar />
         <React.Suspense fallback={null}>
           <SplashScreen
-            enabled={settings.find((s: any) => s.key === 'SHOW_SPLASH')?.value ?? true}
-            message={settings.find((s: any) => s.key === 'SPLASH_MESSAGE')?.value}
+            enabled={settings.find((s: { key: string; value: unknown }) => s.key === 'SHOW_SPLASH')?.value !== false}
+            message={settings.find((s: { key: string; value: unknown }) => s.key === 'SPLASH_MESSAGE')?.value as string}
           />
         </React.Suspense>
         <React.Suspense fallback={null}>

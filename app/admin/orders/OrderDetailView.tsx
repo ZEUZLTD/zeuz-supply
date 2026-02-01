@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Order } from "@/lib/types";
 import { updateOrderStatus, refundOrder } from "./actions";
-import { Check, Truck, Package, XCircle, ArrowLeft, ExternalLink, RefreshCw, AlertTriangle, CreditCard } from "lucide-react";
+import { Check, Truck, Package, ArrowLeft, ExternalLink, AlertTriangle, CreditCard } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +23,7 @@ export function OrderDetailView({ order }: OrderDetailViewProps) {
         try {
             await updateOrderStatus(order.id, newStatus, tracking, carrier);
             setStatus(newStatus);
-        } catch (e) {
+        } catch {
             alert("Failed to update status");
         } finally {
             setIsLoading(false);
@@ -37,8 +37,9 @@ export function OrderDetailView({ order }: OrderDetailViewProps) {
             await refundOrder(order.id);
             setStatus('REFUNDED');
             alert("Refund processed successfully!");
-        } catch (e: any) {
-            alert(`Refund failed: ${e.message}`);
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : 'Unknown error';
+            alert(`Refund failed: ${msg}`);
         } finally {
             setIsLoading(false);
         }
@@ -47,16 +48,10 @@ export function OrderDetailView({ order }: OrderDetailViewProps) {
     const shipping = order.shipping_address || {};
     const items = order.items || [];
 
-    // Calculate Subtotal & Discount info safely
-    const subtotal = items.reduce((acc: number, item: any) => {
-        const unit = item.price?.product_data?.metadata?.original_unit_amount
-            ? item.price.product_data.metadata.original_unit_amount
-            : item.amount_total / item.quantity; // Fallback to paid amount
-        return acc + (unit * item.quantity);
-    }, 0);
+
 
     // Total Paid
-    const shippingItem = items.find((i: any) => i.description === 'Shipping (DPD Next Day)');
+    const shippingItem = items.find((i) => i.description === 'Shipping (DPD Next Day)');
     const shippingCost = shippingItem ? (shippingItem.amount_total as number) : 0;
 
     return (
@@ -178,7 +173,7 @@ export function OrderDetailView({ order }: OrderDetailViewProps) {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            {items.map((item: any, i: number) => {
+                            {items.map((item, i) => {
                                 const metadata = item.price?.product_data?.metadata || {};
                                 const originalPrice = metadata.original_unit_amount
                                     ? metadata.original_unit_amount / 100

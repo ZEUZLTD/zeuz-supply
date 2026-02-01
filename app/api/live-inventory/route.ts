@@ -36,14 +36,14 @@ export async function GET(request: Request) {
         }
 
         // Transform for efficient Client Lookup: { [slug]: { price, stock, status } }
-        const liveMap: Record<string, any> = {};
+        const liveMap: Record<string, { price: number; stock: number; status: string }> = {};
 
-        products?.forEach((p: any) => {
+        products?.forEach((p) => {
             // Calculate Live Stock from Batches (Source of Truth)
             let liveStock = 0;
             if (p.batches && Array.isArray(p.batches)) {
-                const liveBatches = p.batches.filter((b: any) => b.status === 'LIVE');
-                liveStock = liveBatches.reduce((acc: number, b: any) => acc + (b.stock_quantity || 0), 0);
+                const liveBatches = p.batches.filter((b) => b.status === 'LIVE');
+                liveStock = liveBatches.reduce((acc: number, b) => acc + (b.stock_quantity || 0), 0);
             }
 
             // Determine Status
@@ -77,8 +77,9 @@ export async function GET(request: Request) {
             volume_discounts: volumeTiers || []
         });
 
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error("API_FATAL in /api/live-inventory:", e);
-        return NextResponse.json({ error: e.message || "Internal Server Error", stack: e.stack }, { status: 500 });
+        const message = e instanceof Error ? e.message : "Internal Server Error";
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

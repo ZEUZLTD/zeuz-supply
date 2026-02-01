@@ -42,6 +42,7 @@ export interface Batch {
     supplier_reference?: string | null;
     received_date?: string | null;
     created_at?: string;
+    graph_data?: Record<string, unknown> | null;
 }
 
 
@@ -95,5 +96,7 @@ export interface Voucher {
     start_date?: string | null;
     expiry_date?: string | null;
     is_free_shipping: boolean;
+    is_first_order_only?: boolean;
+    allowed_emails?: string[] | null;
     created_at?: string;
 }
