@@ -159,6 +159,7 @@ export async function handleOrderCompletion(session: Stripe.Checkout.Session) {
     }
 
     // Success: Insert Order
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: insertedOrder, error: orderError } = await supabaseAdmin.from('orders').insert({
         stripe_session_id: session.id,
         stripe_payment_intent_id: session.payment_intent, // Capture PI for refunds
@@ -175,8 +176,22 @@ export async function handleOrderCompletion(session: Stripe.Checkout.Session) {
     }).select().single();
 
     if (orderError) {
+        // Handle Race Condition (Unique Constraint Violation)
+        if (orderError.code === '23505') {
+            console.warn(`Race condition detected for session ${session.id}. Fetching existing order.`);
+            const { data: racedOrder } = await supabaseAdmin
+                .from('orders')
+                .select('*')
+                .eq('stripe_session_id', session.id)
+                .single();
+            
+            if (racedOrder) {
+                return { success: true, order: racedOrder, alreadyExists: true };
+            }
+        }
+
         console.error('Supabase Order Error:', orderError);
-        return { error: 'Database Insert Failed' };
+        return { error: `Database Insert Failed: ${orderError.message || orderError.hint || 'Unknown DB Error'}` };
     }
 
     // Mark Abandoned Cart as CONVERTED
