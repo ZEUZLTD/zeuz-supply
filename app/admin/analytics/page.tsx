@@ -1,11 +1,6 @@
 import { getOrderKPIs, getSalesOverTime } from '../orders/actions';
 import { getDiscountAnalytics } from './actions';
-import dynamic from 'next/dynamic';
-
-const SalesChart = dynamic(() => import('../orders/sales-chart'), {
-    ssr: false,
-    loading: () => <div className="w-full h-[300px] bg-gray-50 animate-pulse" />
-});
+import SalesChart from '../orders/sales-chart';
 
 export default async function AnalyticsPage() {
     const kpis = await getOrderKPIs();

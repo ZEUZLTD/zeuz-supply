@@ -10,7 +10,7 @@ export async function submitInquiry(formData: FormData) {
     const metadataStr = formData.get('metadata') as string;
     const metadata = metadataStr ? JSON.parse(metadataStr) : {};
 
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
 
     // Service Role Client (to bypass RLS for public insertions if needed, 
     // though inquiries usually has public insert policy. Using standard client for safety context 

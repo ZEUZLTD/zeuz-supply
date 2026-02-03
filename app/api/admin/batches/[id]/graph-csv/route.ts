@@ -1,10 +1,8 @@
 import { getSupabaseServer } from "@/lib/supabase-server";
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(
-    request: NextRequest,
-    { params }: { params: { id: string } }
-) {
+export async function GET(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     const supabase = getSupabaseServer();
 
     // 1. Fetch Batch Data
@@ -49,10 +47,8 @@ export async function GET(
     });
 }
 
-export async function POST(
-    request: NextRequest,
-    { params }: { params: { id: string } }
-) {
+export async function POST(request: NextRequest, props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     const supabase = getSupabaseServer();
 
     // 1. Read File

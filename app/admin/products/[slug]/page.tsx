@@ -2,12 +2,13 @@ import { getProduct } from '../product-actions';
 import ProductForm from './product-form';
 
 interface PageProps {
-    params: {
+    params: Promise<{
         slug: string;
-    };
+    }>;
 }
 
-export default async function AdminProductPage({ params }: PageProps) {
+export default async function AdminProductPage(props: PageProps) {
+    const params = await props.params;
     const isNew = params.slug === 'new';
     let product = null;
 

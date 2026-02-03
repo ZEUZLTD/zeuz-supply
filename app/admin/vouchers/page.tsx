@@ -5,7 +5,8 @@ import { cn } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
-export default async function VouchersPage({ searchParams = {} }: { searchParams?: { edit?: string } }) {
+export default async function VouchersPage(props: { searchParams?: Promise<{ edit?: string }> }) {
+    const searchParams = await props.searchParams;
     console.log("[ADMIN] VouchersPage Render Initiated");
 
     // Defensive fetching

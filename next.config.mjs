@@ -34,9 +34,7 @@ const nextConfig = {
             fullUrl: true,
         },
     },
-    eslint: {
-        ignoreDuringBuilds: true,
-    },
+    // eslint config removed (deprecated)
     env: {
         NEXT_PUBLIC_DEPLOYMENT_VERSION: getGitCommit(),
     },

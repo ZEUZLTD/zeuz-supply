@@ -1,9 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // Dedicated Server Client for Static Generation / ISR
 // This bypasses the browser cookie layer for pure data fetching
 // function for lazy evaluation
-export const getSupabaseServer = () => {
+export const getSupabaseServer = (): SupabaseClient => {
     if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
         // during build, return null or throw if critical
         console.warn("Supabase Server Client missing env vars");

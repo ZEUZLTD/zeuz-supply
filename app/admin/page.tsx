@@ -7,7 +7,10 @@ import FulfillmentStats from './components/FulfillmentStats';
 import { ArrowRight, Package, TrendingUp, Users } from 'lucide-react';
 import { getStartEndDates, TimeframeMode } from '@/lib/date-utils';
 
-export default async function AdminDashboard({ searchParams }: { searchParams: { mode?: string, date?: string, from?: string, to?: string } }) {
+export default async function AdminDashboard(
+    props: { searchParams: Promise<{ mode?: string, date?: string, from?: string, to?: string }> }
+) {
+    const searchParams = await props.searchParams;
     const mode = (searchParams?.mode as TimeframeMode) || 'month';
     const dateParam = searchParams?.date;
     const refDate = dateParam ? new Date(dateParam) : new Date();

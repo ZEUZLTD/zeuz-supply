@@ -2,7 +2,8 @@ import { getTemplate, upsertTemplate } from '../actions';
 import { ArrowLeft, Save } from 'lucide-react';
 import Link from 'next/link';
 
-export default async function EditTemplatePage({ params }: { params: { id: string } }) {
+export default async function EditTemplatePage(props: { params: Promise<{ id: string }> }) {
+    const params = await props.params;
     const isNew = params.id === 'new';
     const template = isNew ? {} : await getTemplate(params.id);
 

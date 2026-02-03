@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 
 export async function updateSetting(key: string, value: unknown) {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_KEY!,
@@ -34,7 +34,7 @@ export async function updateSetting(key: string, value: unknown) {
 }
 
 export async function getSettings() {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_KEY!,

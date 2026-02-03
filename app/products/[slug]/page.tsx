@@ -10,8 +10,8 @@ export const revalidate = 60;
 export const dynamicParams = true; // Allow new products to be generated on demand
 
 interface Props {
-    params: { slug: string };
-    searchParams: { [key: string]: string | string[] | undefined };
+    params: Promise<{ slug: string }>;
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }
 
 // Helper: Fetch Single Product
@@ -93,10 +93,8 @@ function formatProduct(product: any): InventoryItem {
 }
 
 // 1. Metadata Generation
-export async function generateMetadata(
-    { params }: Props,
-    parent: ResolvingMetadata
-): Promise<Metadata> {
+export async function generateMetadata(props: Props, parent: ResolvingMetadata): Promise<Metadata> {
+    const params = await props.params;
     try {
         const product = await getProduct(params.slug);
 
@@ -138,7 +136,8 @@ export async function generateMetadata(
 }
 
 // 2. Page Component
-export default async function ProductPage({ params }: Props) {
+export default async function ProductPage(props: Props) {
+    const params = await props.params;
     const product = await getProduct(params.slug);
 
     if (!product) {

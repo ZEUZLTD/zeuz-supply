@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 async function getAdminClient() {
-    const cookieStore = cookies();
+    const cookieStore = await cookies();
 
     // 1. Setup Auth Checking Client (Standard)
     const supabaseStandard = createServerClient(
