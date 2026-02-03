@@ -10,7 +10,9 @@ export function useLiveInventory(initialInventory: InventoryItem[]) {
         const fetchLive = async () => {
             try {
                 // Cache Busting: Append timestamp
-                const res = await fetch(`/api/live-inventory?_t=${Date.now()}`);
+                const res = await fetch(`/api/live-inventory?_t=${Date.now()}`, {
+                    headers: { 'Accept': 'application/json' }
+                });
                 if (!res.ok) return;
                 const data = await res.json();
 
