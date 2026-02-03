@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import { Voucher } from "@/lib/types";
 
 
+
 // Safe initialization for build environment where keys might be missing
 const stripe = process.env.STRIPE_SECRET_KEY
     ? new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -25,6 +26,10 @@ export async function POST(request: Request) {
         if (!items || items.length === 0) {
             return NextResponse.json({ error: "Empty cart" }, { status: 400 });
         }
+
+        // --- ADDRESS VALIDATION ---
+        // (Handled by Stripe Collection + Webhook Security)
+
 
         if (!stripe) {
             console.error("Stripe not initialized. Unknown STRIPE_SECRET_KEY.");
@@ -363,6 +368,9 @@ export async function POST(request: Request) {
         // --- STRIPE SESSION CREATION ---
         console.log(`[CHECKOUT] Creating Stripe session for ${email} (${lineItems.length} items)`);
 
+        // Determine origin for dynamic redirects (Localhost vs Production)
+        const origin = request.headers.get('origin') || process.env.NEXT_PUBLIC_URL || 'https://zeuz.co.uk';
+
         let session;
         try {
             session = await stripe.checkout.sessions.create({
@@ -370,26 +378,18 @@ export async function POST(request: Request) {
                 line_items: lineItems,
                 mode: 'payment',
                 customer_email: email,
-                success_url: `${process.env.NEXT_PUBLIC_URL}/?success=true&session_id={CHECKOUT_SESSION_ID}`,
-                cancel_url: `${process.env.NEXT_PUBLIC_URL}/`,
-                // REDUNDANCY FIX:
-                // Since we collect address on our frontend, we disable Stripe's collection
-                // but pass the data to Stripe so it's recorded correctly on the Payment Intent.
-                payment_intent_data: {
-                    shipping: {
-                        name: String(shipping.name || 'Anonymous'),
-                        address: {
-                            line1: String(shipping.line1 || ''),
-                            line2: String(shipping.line2 || ''),
-                            city: String(shipping.city || ''),
-                            postal_code: String(shipping.postal_code || ''),
-                            country: 'GB'
-                        }
-                    }
+                success_url: `${origin}/?success=true&session_id={CHECKOUT_SESSION_ID}`,
+                cancel_url: `${origin}/`,
+                // STRIPE NATIVE COLLECTION
+                // We enforce GB shipping here.
+                shipping_address_collection: {
+                    allowed_countries: ['GB'],
                 },
+                // We pass email to pre-fill if we have it
+
+
                 metadata: {
                     source: 'zeuz_v1',
-                    shipping_details: JSON.stringify(shipping),
                     voucher_code: voucher ? voucher.code : null,
                     checkout_id: checkoutId // Link back to our DB
                 }

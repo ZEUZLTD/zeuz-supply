@@ -11,6 +11,7 @@ import { ThemeSwitcher } from "./ThemeSwitcher";
 import { usePathname } from "next/navigation";
 import { checkVoucherInternal } from "@/app/actions/vouchers";
 import { OrderDetailView } from "./OrderDetailView";
+import { validateUKPostcode } from "@/lib/validation";
 
 export const CartDrawer = () => {
     const pathname = usePathname();
@@ -82,6 +83,7 @@ export const CartDrawer = () => {
     const [voucherError, setVoucherError] = useState("");
     const [isSafetyAccepted, setIsSafetyAccepted] = useState(false);
     const [isAdminUser, setIsAdminUser] = useState(false);
+    const [postcodeError, setPostcodeError] = useState<string | null>(null);
 
     useEffect(() => {
         supabase.auth.getSession().then(({ data: { session } }) => {
@@ -737,52 +739,37 @@ export const CartDrawer = () => {
                                                         </div>
                                                     </div>
 
-                                                    <div className="col-span-1 space-y-1">
-                                                        <label className="text-[10px] font-mono-spec opacity-50 uppercase">First Name</label>
-                                                        <input
-                                                            type="text"
-                                                            value={shipping.name.split(' ')[0] || ''}
-                                                            onChange={e => updateShipping('name', `${e.target.value} ${shipping.name.split(' ')[1] || ''}`.trim())}
-                                                            className="w-full bg-[var(--color-background)] border border-[var(--color-border-main)] p-2 font-mono-spec text-xs focus:outline-none focus:border-[var(--color-accent-brand)]"
-                                                        />
-                                                    </div>
-                                                    <div className="col-span-1 space-y-1">
-                                                        <label className="text-[10px] font-mono-spec opacity-50 uppercase">Last Name</label>
-                                                        <input
-                                                            type="text"
-                                                            value={shipping.name.split(' ')[1] || ''}
-                                                            onChange={e => updateShipping('name', `${shipping.name.split(' ')[0] || ''} ${e.target.value}`.trim())}
-                                                            className="w-full bg-[var(--color-background)] border border-[var(--color-border-main)] p-2 font-mono-spec text-xs focus:outline-none focus:border-[var(--color-accent-brand)]"
-                                                        />
-                                                    </div>
-
                                                     <div className="col-span-2 space-y-1">
-                                                        <label className="text-[10px] font-mono-spec opacity-50 uppercase">Address Line 1</label>
-                                                        <input
-                                                            type="text"
-                                                            value={shipping.line1}
-                                                            onChange={e => updateShipping('line1', e.target.value)}
-                                                            className="w-full bg-[var(--color-background)] border border-[var(--color-border-main)] p-2 font-mono-spec text-xs focus:outline-none focus:border-[var(--color-accent-brand)]"
-                                                        />
-                                                    </div>
-
-                                                    <div className="col-span-1 space-y-1">
-                                                        <label className="text-[10px] font-mono-spec opacity-50 uppercase">City</label>
-                                                        <input
-                                                            type="text"
-                                                            value={shipping.city}
-                                                            onChange={e => updateShipping('city', e.target.value)}
-                                                            className="w-full bg-[var(--color-background)] border border-[var(--color-border-main)] p-2 font-mono-spec text-xs focus:outline-none focus:border-[var(--color-accent-brand)]"
-                                                        />
-                                                    </div>
-                                                    <div className="col-span-1 space-y-1">
-                                                        <label className="text-[10px] font-mono-spec opacity-50 uppercase">Postal Code</label>
+                                                        <label className="text-[10px] font-mono-spec opacity-50 uppercase">Postcode (Mainland UK Only)</label>
                                                         <input
                                                             type="text"
                                                             value={shipping.postal_code}
-                                                            onChange={e => updateShipping('postal_code', e.target.value)}
-                                                            className="w-full bg-[var(--color-background)] border border-[var(--color-border-main)] p-2 font-mono-spec text-xs focus:outline-none focus:border-[var(--color-accent-brand)]"
+                                                            placeholder="E.g. SW1A 1AA"
+                                                            onChange={e => {
+                                                                const val = e.target.value.toUpperCase();
+                                                                updateShipping('postal_code', val);
+                                                                if (val.length >= 2) {
+                                                                    const result = validateUKPostcode(val);
+                                                                    setPostcodeError(result.isValid ? null : result.error || 'Invalid postcode');
+                                                                } else {
+                                                                    setPostcodeError(null);
+                                                                }
+                                                            }}
+                                                            className={cn(
+                                                                "w-full bg-[var(--color-background)] border p-2 font-mono-spec text-xs focus:outline-none",
+                                                                postcodeError ? "border-red-500 focus:border-red-500" : "border-[var(--color-border-main)] focus:border-[var(--color-accent-brand)]"
+                                                            )}
                                                         />
+                                                        {postcodeError && (
+                                                            <p className="text-[10px] text-red-500 font-mono-spec animate-in fade-in slide-in-from-left-2 duration-300">
+                                                                <span className="bg-red-500 text-white px-1 mr-1">RESTRICTED</span> {postcodeError}
+                                                            </p>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="col-span-2 bg-[var(--color-accent-brand)]/10 border border-[var(--color-accent-brand)]/30 p-3 text-[10px] font-mono-spec">
+                                                        <p className="text-[var(--color-accent-brand)] font-bold mb-1">STREAMLINED CHECKOUT</p>
+                                                        <p className="text-[var(--color-foreground)] opacity-70">Full address collected securely via Stripe during payment.</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -841,7 +828,7 @@ export const CartDrawer = () => {
 
                                                         <button
                                                             onClick={handleCheckout}
-                                                            disabled={isLoading || hasStockViolation || !shipping.name || !shipping.line1 || !shipping.postal_code || (!session && !shipping.email)}
+                                                            disabled={isLoading || hasStockViolation || !!postcodeError || !shipping.postal_code || (!session && !shipping.email)}
                                                             className="flex-1 bg-[var(--color-accent-energy)] text-[var(--color-background)] font-bold py-3 hover:bg-[var(--color-foreground)] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 uppercase tracking-wider text-sm"
                                                         >
                                                             {isLoading ? "PROCESSING..." : hasStockViolation ? "STOCK ERROR" : "AUTHORIZE PAYMENT"}

@@ -34,3 +34,21 @@ with p as (select id, slug from products)
 insert into batches (product_id, batch_code, stock_quantity, status, arrival_date, acir_avg)
 select id, 'PROTO-' || upper(slug), 0, 'TESTING', '2026-06-01', 0.0
 from p where slug in ('tp-60xg', 'mol-p60b', 'mol-m65a');
+-- Create or Update the 'order_cancelled' email template
+INSERT INTO email_templates (key, subject, body_html)
+VALUES (
+  'order_cancelled',
+  'Urgent: Issue with your Zeuz Order',
+  '<div style="font-family: sans-serif; color: #111;">
+    <h2>Order Refunded</h2>
+    <p>Hi there,</p>
+    <p>Unfortunately, we had to cancel and refund your recent order.</p>
+    <p><strong>Reason:</strong> {{reason}}</p>
+    <p>Your payment has been fully refunded to your card (please allow 5-10 days for it to appear).</p>
+    <p>If you believe this is a mistake, please reply to this email.</p>
+    <br/>
+    <p>Zeuz Supply Team</p>
+  </div>'
+)
+ON CONFLICT (key) DO UPDATE 
+SET body_html = EXCLUDED.body_html;

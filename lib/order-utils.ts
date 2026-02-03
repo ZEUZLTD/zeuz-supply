@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import Stripe from 'stripe';
+import { validateUKPostcode } from '@/lib/validation';
 
 // Lazy Init Helpers
 const getStripe = () => {
@@ -61,8 +62,6 @@ export async function handleOrderCompletion(session: Stripe.Checkout.Session) {
 
         if (!supabaseId) {
             console.warn(`No Supabase ID found for product ${item.description} - Skipping inventory check`);
-            // We do NOT fail here because early legacy items might validly have no ID.
-            // But for v2, we should probably ensure it.
             continue;
         }
 
@@ -98,7 +97,6 @@ export async function handleOrderCompletion(session: Stripe.Checkout.Session) {
 
             if (updateError || count === 0) {
                 // Race condition hit
-                // In strict mode, we fail.
                 stockFailed = true;
                 failedItemName = item.description || 'Unknown Item';
                 break;
@@ -120,12 +118,14 @@ export async function handleOrderCompletion(session: Stripe.Checkout.Session) {
         if (session.payment_intent) {
             await stripe.refunds.create({
                 payment_intent: session.payment_intent as string,
-                reason: 'requested_by_customer', // Best fit
+                reason: 'requested_by_customer',
             });
         }
 
         // Apology Email
-        const email = session.customer_details?.email;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const email = (session as any).customer_details?.email || (session as any).customer_email;
+
         if (email && process.env.RESEND_API_KEY) {
             const { sendTransactionalEmail } = await import('@/lib/email');
             await sendTransactionalEmail({
@@ -138,7 +138,7 @@ export async function handleOrderCompletion(session: Stripe.Checkout.Session) {
         // Insert Refunded Order Record
         await supabaseAdmin.from('orders').insert({
             stripe_session_id: session.id,
-            customer_email: session.customer_details?.email,
+            customer_email: email || null,
             status: 'REFUNDED_NO_STOCK',
             amount_total: session.amount_total,
             currency: session.currency,
@@ -148,9 +148,58 @@ export async function handleOrderCompletion(session: Stripe.Checkout.Session) {
         return { error: 'Stock Validation Failed', refunded: true };
     }
 
-    // Parse Shipping from Metadata (Primary) or fallback to Stripe Customer Details
-    let shippingAddress = session.customer_details?.address;
-    if (session.metadata?.shipping_details) {
+    // Parse Shipping: Prioritize Stripe Native Collection, then fallback to metadata
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let shippingAddress = (session as any).shipping_details?.address || (session as any).customer_details?.address;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const customerEmail: string | null = (session as any).customer_details?.email || (session as any).customer_email || null;
+
+    // --- SECURITY: MAINLAND CHECK (POST-CHECKOUT) ---
+    // User might have switched postcode in Stripe Checkout to non-mainland.
+    // We must validate and REFUND if they breached our rule.
+    if (shippingAddress && shippingAddress.postal_code) {
+        const valResult = validateUKPostcode(shippingAddress.postal_code);
+        if (!valResult.isValid) {
+            console.error(`SECURITY BLOCK: Invalid Postcode used (${shippingAddress.postal_code}) - REFUNDING`);
+
+            // Refund
+            if (session.payment_intent) {
+                await stripe.refunds.create({
+                    payment_intent: session.payment_intent as string,
+                    reason: 'fraudulent',
+                });
+            }
+
+            // Notify User
+            if (customerEmail && process.env.RESEND_API_KEY) {
+                const { sendTransactionalEmail } = await import('@/lib/email');
+                await sendTransactionalEmail({
+                    key: 'order_cancelled',
+                    to: customerEmail,
+                    data: {
+                        reason: `Delivery to '${shippingAddress.postal_code}' is not supported (Mainland UK Only). Your order has been refunded.`
+                    }
+                });
+            }
+
+            // Log Failed Order
+            await supabaseAdmin.from('orders').insert({
+                stripe_session_id: session.id,
+                customer_email: customerEmail,
+                status: 'REFUNDED_INVALID_ADDRESS',
+                amount_total: session.amount_total,
+                currency: session.currency,
+                items: lineItems,
+                metadata: { ...session.metadata, invalid_reason: valResult.error }
+            });
+
+            return { error: `Order Rejected: ${valResult.error}`, refunded: true };
+        }
+    }
+
+    // Legacy/Manual Check
+    if (!shippingAddress && session.metadata?.shipping_details) {
         try {
             shippingAddress = JSON.parse(session.metadata.shipping_details);
         } catch (e) {
@@ -162,29 +211,28 @@ export async function handleOrderCompletion(session: Stripe.Checkout.Session) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data: insertedOrder, error: orderError } = await supabaseAdmin.from('orders').insert({
         stripe_session_id: session.id,
-        stripe_payment_intent_id: session.payment_intent, // Capture PI for refunds
-        customer_email: session.customer_details?.email,
+        stripe_payment_intent_id: session.payment_intent,
+        customer_email: customerEmail,
         shipping_address: shippingAddress,
         status: session.payment_status === 'paid' ? 'PAID' : 'PENDING',
         amount_total: session.amount_total,
         currency: session.currency,
         items: lineItems,
         metadata: {
-            ...session.metadata, // Spread original session metadata (shipping, etc)
-            voucher_code: session.metadata?.voucher_code // Ensure explicit voucher capture
+            ...session.metadata,
+            voucher_code: session.metadata?.voucher_code
         }
     }).select().single();
 
     if (orderError) {
         // Handle Race Condition (Unique Constraint Violation)
         if (orderError.code === '23505') {
-            console.warn(`Race condition detected for session ${session.id}. Fetching existing order.`);
             const { data: racedOrder } = await supabaseAdmin
                 .from('orders')
                 .select('*')
                 .eq('stripe_session_id', session.id)
                 .single();
-            
+
             if (racedOrder) {
                 return { success: true, order: racedOrder, alreadyExists: true };
             }
@@ -195,18 +243,16 @@ export async function handleOrderCompletion(session: Stripe.Checkout.Session) {
     }
 
     // Mark Abandoned Cart as CONVERTED
-    if (session.customer_details?.email) {
+    if (customerEmail) {
         await supabaseAdmin
             .from('checkouts')
             .update({ status: 'CONVERTED' })
-            .eq('email', session.customer_details.email)
+            .eq('email', customerEmail)
             .eq('status', 'OPEN');
     }
 
     // Send Receipt Email
-    const email = session.customer_details?.email;
-    if (email) {
-        // Generate Items HTML
+    if (customerEmail) {
         const itemsHtml = lineItems.map((item: Stripe.LineItem) => `
             <div style="display: table-row; border-bottom: 1px solid #222;">
                 <div style="display: table-cell; padding: 10px 0; font-size: 10px; color: #888; width: 10%;">${item.quantity}x</div>
@@ -221,7 +267,7 @@ export async function handleOrderCompletion(session: Stripe.Checkout.Session) {
         const { sendTransactionalEmail } = await import('@/lib/email');
         await sendTransactionalEmail({
             key: 'order_confirmation',
-            to: email,
+            to: customerEmail,
             data: {
                 order_id: session.id,
                 total: (session.amount_total || 0) / 100,
