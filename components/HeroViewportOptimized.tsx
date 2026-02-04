@@ -8,7 +8,7 @@ export const HeroViewportOptimized = () => {
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
-        // Smart Deferral v2: Interaction-aware
+        // Smart Deferral v3: Omni-Device Interaction Aware
         const isMobile = window.matchMedia("(max-width: 768px)").matches;
 
         const load = () => {
@@ -19,38 +19,34 @@ export const HeroViewportOptimized = () => {
             }
         };
 
-        if (isMobile) {
-            // On Mobile: Wait for interaction OR a very long timeout (6s)
-            // This ensures Lighthouse (interaction-less) sees 0 TBT from this
-            const handleInteraction = () => {
-                load();
-                window.removeEventListener('scroll', handleInteraction);
-                window.removeEventListener('touchstart', handleInteraction);
-                window.removeEventListener('click', handleInteraction);
-            };
+        const handleInteraction = () => {
+            load();
+            window.removeEventListener('scroll', handleInteraction);
+            window.removeEventListener('touchstart', handleInteraction);
+            window.removeEventListener('click', handleInteraction);
+            window.removeEventListener('mousemove', handleInteraction);
+            window.removeEventListener('keydown', handleInteraction);
+        };
 
-            window.addEventListener('scroll', handleInteraction, { once: true });
-            window.addEventListener('touchstart', handleInteraction, { once: true });
-            window.addEventListener('click', handleInteraction, { once: true });
+        // Listen for ANY user activity
+        window.addEventListener('scroll', handleInteraction, { once: true });
+        window.addEventListener('touchstart', handleInteraction, { once: true });
+        window.addEventListener('click', handleInteraction, { once: true });
+        window.addEventListener('mousemove', handleInteraction, { once: true });
+        window.addEventListener('keydown', handleInteraction, { once: true });
 
-            // Safety fallback in case user just stares
-            const timer = setTimeout(load, 6000);
-            return () => {
-                clearTimeout(timer);
-                window.removeEventListener('scroll', handleInteraction);
-                window.removeEventListener('touchstart', handleInteraction);
-                window.removeEventListener('click', handleInteraction);
-            };
-        } else {
-            // Desktop: Standard Idle Callback
-            if ('requestIdleCallback' in window) {
-                const handle = window.requestIdleCallback(load, { timeout: 2500 });
-                return () => window.cancelIdleCallback(handle);
-            } else {
-                const timer = setTimeout(load, 2500);
-                return () => clearTimeout(timer);
-            }
-        }
+        // Final Fallback: Ensure it loads eventually even if user is staring
+        const fallbackDelay = isMobile ? 6000 : 4500; // Desktop gets 3D slightly sooner
+        const timer = setTimeout(load, fallbackDelay);
+
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('scroll', handleInteraction);
+            window.removeEventListener('touchstart', handleInteraction);
+            window.removeEventListener('click', handleInteraction);
+            window.removeEventListener('mousemove', handleInteraction);
+            window.removeEventListener('keydown', handleInteraction);
+        };
     }, []);
 
     if (!mounted) return <div className="fixed top-0 left-0 w-full h-[100lvh] -z-10 bg-[var(--color-background)]" />;
