@@ -35,14 +35,17 @@ const GLBCell = () => {
     useEffect(() => {
         const generateTexture = () => {
             if (typeof document === 'undefined') return;
+            // OPTIMIZATION: Reduced from 512x512 to 128x128 (16x faster generation)
+            // This prevents main thread locking on mobile devices (TBT regression fix)
+            const size = 128;
             const canvas = document.createElement('canvas');
-            canvas.width = 512;
-            canvas.height = 512;
-            const ctx = canvas.getContext('2d');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d', { willReadFrequently: true }); // Optimization hint
             if (!ctx) return;
             ctx.fillStyle = '#808080';
-            ctx.fillRect(0, 0, 512, 512);
-            const imageData = ctx.getImageData(0, 0, 512, 512);
+            ctx.fillRect(0, 0, size, size);
+            const imageData = ctx.getImageData(0, 0, size, size);
             const data = imageData.data;
             for (let i = 0; i < data.length; i += 4) {
                 const noise = (Math.random() - 0.5) * 50;
@@ -57,7 +60,8 @@ const GLBCell = () => {
             tex.repeat.set(4, 4);
             setGrainTexture(tex);
         };
-        setTimeout(generateTexture, 100);
+        // Defer slightly longer to allow initial frame to settle
+        requestAnimationFrame(() => setTimeout(generateTexture, 200));
     }, []);
 
     // Apply Materials
