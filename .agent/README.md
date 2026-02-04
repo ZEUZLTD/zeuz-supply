@@ -7,7 +7,7 @@ Do not guess. Use the "Brain".
 ## 📍 Where am I?
 *   **Repo**: `zeuz-supply`
 *   **Mission**: High-Fidelity Infrastructure for Energy Distribution.
-*   **Architecture**: Next.js 14 + Supabase + Stripe.
+*   **Architecture**: Next.js 16 (Canary) + React 19 + R3F + Supabase + Stripe.
 
 ## 🧠 The "Brain" (Context Modules)
 
@@ -44,7 +44,23 @@ Do not guess. Use the "Brain".
     *   **Consolidate**: Run `node scripts/consolidate_docs.js`.
     *   **Gatekeeper Audit**: Run `node scripts/gatekeeper.js`.
 
+---
 
+## ⚡ 3D Engine & R3F Rules (React 19 Protocol)
+
+> [!WARNING]
+> React 19 + Next.js 16 introduces aggressive hydration boundaries. Follow these rules to avoid `WebGL Context Lost` crashes.
+
+1.  **NO DYNAMIC SSR DISABLE FOR CANVAS**:
+    *   ❌ **BAD**: `dynamic(() => import('./HeroViewport'), { ssr: false })`
+    *   ✅ **GOOD**: Import directly, and use a `{ mounted && <Component /> }` guard inside the component if client-only behavior is needed.
+    *   *Reason*: Wrapping the Context provider in a dynamic loader causes double-initialization and context loss.
+
+2.  **MATERIAL INJECTION OVER TEXTURES**:
+    *   Avoid relying on GLB-embedded textures if they fail to load.
+    *   Prefer **Runtime Material Injection**: Detect the mesh by name (`Mesh.name`) and apply a fresh `THREE.Material`. This is more robust and allows for dynamic theming.
+
+---
 
 ## ⚡ Quick Protocol
 1.  **Plan**: Read the relevant module.

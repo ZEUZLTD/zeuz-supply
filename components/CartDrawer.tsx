@@ -142,7 +142,7 @@ export const CartDrawer = () => {
     };
 
     const fetchAddress = async () => {
-        const { data } = await supabase.from('user_addresses').select('*').single();
+        const { data } = await supabase.from('user_addresses').select('*').limit(1).maybeSingle();
         if (data) {
             setShipping(prev => ({
                 ...prev,
