@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { startTransition, useOptimistic, useState } from "react";
 import { Order } from "@/lib/types";
 import { updateOrderStatus, refundOrder } from "./actions";
-import { Check, Truck, Package, ArrowLeft, ExternalLink, AlertTriangle, CreditCard } from "lucide-react";
+import { Check, Truck, Package, ArrowLeft, ExternalLink, AlertTriangle, CreditCard, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
@@ -12,37 +12,58 @@ interface OrderDetailViewProps {
 }
 
 export function OrderDetailView({ order }: OrderDetailViewProps) {
-    const [status, setStatus] = useState(order.status);
+    // Optimistic State: Shows the NEW status immediately while server processes
+    const [optimisticStatus, setOptimisticStatus] = useOptimistic(
+        order.status,
+        (state, newStatus: string) => newStatus
+    );
+
+    // We still keep local state to "commit" the change if needed, though usually strict Server Actions 
+    // rely on revalidatePath to update the prop 'order'. 
+    // However, since we are in a Client Component that takes 'order' as prop, 
+    // we need to trust the prop updates via parent RSC re-render (which happens on revalidatePath).
+    // So 'optimisticStatus' is the UI source of truth.
+
     const [tracking, setTracking] = useState(order.tracking_number || '');
     const [carrier, setCarrier] = useState(order.carrier || '');
-    const [isLoading, setIsLoading] = useState(false);
+    const [isPending, setIsPending] = useState(false); // Controls loading indicators
 
     const handleStatusUpdate = async (newStatus: string) => {
         if (!confirm(`Mark order as ${newStatus}?`)) return;
-        setIsLoading(true);
-        try {
-            await updateOrderStatus(order.id, newStatus, tracking, carrier);
-            setStatus(newStatus);
-        } catch {
-            alert("Failed to update status");
-        } finally {
-            setIsLoading(false);
-        }
+
+        // Instant UI Update
+        startTransition(async () => {
+            setOptimisticStatus(newStatus);
+            setIsPending(true);
+            try {
+                await updateOrderStatus(order.id, newStatus, tracking, carrier);
+                // No need to setStatus manually if server component re-renders the page 
+                // and passes new `order` prop.
+            } catch (e) {
+                alert("Failed to update status");
+                // Optimistic UI automatically reverts if parent doesn't update or if we don't commit
+            } finally {
+                setIsPending(false);
+            }
+        });
     };
 
     const handleRefund = async () => {
         if (!confirm("Are you sure you want to refund this order? This will immediately process a refund via Stripe.")) return;
-        setIsLoading(true);
-        try {
-            await refundOrder(order.id);
-            setStatus('REFUNDED');
-            alert("Refund processed successfully!");
-        } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : 'Unknown error';
-            alert(`Refund failed: ${msg}`);
-        } finally {
-            setIsLoading(false);
-        }
+
+        startTransition(async () => {
+            setOptimisticStatus('REFUNDED');
+            setIsPending(true);
+            try {
+                await refundOrder(order.id);
+                alert("Refund processed successfully!");
+            } catch (e: unknown) {
+                const msg = e instanceof Error ? e.message : 'Unknown error';
+                alert(`Refund failed: ${msg}`);
+            } finally {
+                setIsPending(false);
+            }
+        });
     };
 
     const shipping = order.shipping_address || {};
@@ -74,13 +95,13 @@ export function OrderDetailView({ order }: OrderDetailViewProps) {
                 <div className="flex items-center gap-2">
                     <span className={cn(
                         "px-3 py-1 text-sm font-bold uppercase rounded-full border",
-                        status === 'PAID' && "bg-green-100 text-green-700 border-green-200",
-                        status === 'PROCESSING' && "bg-blue-100 text-blue-700 border-blue-200",
-                        status === 'SHIPPED' && "bg-purple-100 text-purple-700 border-purple-200",
-                        status === 'DELIVERED' && "bg-gray-100 text-gray-700 border-gray-200",
-                        status === 'REFUNDED' && "bg-red-100 text-red-700 border-red-200"
+                        optimisticStatus === 'PAID' && "bg-green-100 text-green-700 border-green-200",
+                        optimisticStatus === 'PROCESSING' && "bg-blue-100 text-blue-700 border-blue-200",
+                        optimisticStatus === 'SHIPPED' && "bg-purple-100 text-purple-700 border-purple-200",
+                        optimisticStatus === 'DELIVERED' && "bg-gray-100 text-gray-700 border-gray-200",
+                        optimisticStatus === 'REFUNDED' && "bg-red-100 text-red-700 border-red-200"
                     )}>
-                        {status}
+                        {optimisticStatus}
                     </span>
                     {order.stripe_payment_intent_id && (
                         <a
@@ -101,7 +122,7 @@ export function OrderDetailView({ order }: OrderDetailViewProps) {
                     {/* Status Buttons */}
                     <button
                         onClick={() => handleStatusUpdate('PROCESSING')}
-                        disabled={status !== 'PAID' && status !== 'PENDING' || isLoading}
+                        disabled={optimisticStatus !== 'PAID' && optimisticStatus !== 'PENDING' || isPending}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 border border-blue-100 font-bold text-xs uppercase hover:bg-blue-100 disabled:opacity-50 disabled:grayscale transition-all"
                     >
                         <Package size={14} /> 1. Start Processing
@@ -124,7 +145,7 @@ export function OrderDetailView({ order }: OrderDetailViewProps) {
                         />
                         <button
                             onClick={() => handleStatusUpdate('SHIPPED')}
-                            disabled={!tracking || status === 'SHIPPED' || status === 'DELIVERED' || isLoading}
+                            disabled={!tracking || optimisticStatus === 'SHIPPED' || optimisticStatus === 'DELIVERED' || isPending}
                             className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-600 border border-purple-100 font-bold text-xs uppercase hover:bg-purple-100 disabled:opacity-50 disabled:grayscale transition-all h-8"
                         >
                             <Truck size={14} /> 2. Mark Shipped
@@ -135,7 +156,7 @@ export function OrderDetailView({ order }: OrderDetailViewProps) {
 
                     <button
                         onClick={() => handleStatusUpdate('DELIVERED')}
-                        disabled={status !== 'SHIPPED' || isLoading}
+                        disabled={optimisticStatus !== 'SHIPPED' || isPending}
                         className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-600 border border-green-100 font-bold text-xs uppercase hover:bg-green-100 disabled:opacity-50 disabled:grayscale transition-all"
                     >
                         <Check size={14} /> 3. Confirmed Delivered
@@ -143,10 +164,10 @@ export function OrderDetailView({ order }: OrderDetailViewProps) {
 
                     <div className="flex-1" />
 
-                    {(status !== 'REFUNDED' && status !== 'REFUNDED_NO_STOCK') && (
+                    {(optimisticStatus !== 'REFUNDED' && optimisticStatus !== 'REFUNDED_NO_STOCK') && (
                         <button
                             onClick={handleRefund}
-                            disabled={isLoading}
+                            disabled={isPending}
                             className="text-red-500 text-xs font-bold hover:bg-red-50 px-3 py-1.5 rounded transition-colors flex items-center gap-2 border border-transparent hover:border-red-100"
                         >
                             <AlertTriangle size={12} />

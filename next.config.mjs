@@ -18,6 +18,7 @@ const nextConfig = {
     output: 'standalone',
     experimental: {
         optimizePackageImports: ['lucide-react', 'recharts', 'framer-motion', '@react-three/drei'],
+        // ppr: true,
     },
     images: {
         formats: ['image/avif', 'image/webp'],
