@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@radix-ui/react-switch": "^1.2.6",
-    "@react-three/drei": "^9.122.0",
+    "@react-three/drei": "^10.0.0",
     "@react-three/fiber": "^9.0.0",
     "@react-three/offscreen": "^0.0.8",
     "@supabase/ssr": "^0.8.0",
